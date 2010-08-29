@@ -59,7 +59,7 @@ var mode = {
 eo.ease = function(name) {
   var i = name.indexOf("-"),
       t = i >= 0 ? name.substring(0, i) : name,
-      m = i >= 0 ? name.substring(i + 1) : null;
+      m = i >= 0 ? name.substring(i + 1) : "in";
   return mode[m](ease[t].apply(null, Array.prototype.slice.call(arguments, 1)));
 };
 
@@ -103,7 +103,7 @@ function elastic(a, p) {
   if (arguments.length < 1) { a = 1; s = p / 4; }
   else s = p / (2 * Math.PI) * Math.asin(1 / a);
   return function(t) {
-    return -a * Math.pow(2, 10 * (--t)) * Math.sin((t - s) * (2 * Math.PI) / p);
+    return 1 + a * Math.pow(2, 10 * -t) * Math.sin(-(t + s) * 2 * Math.PI / p);
   };
 }
 

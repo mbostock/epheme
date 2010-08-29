@@ -121,6 +121,10 @@ eo.select = function(e) {
     return items[i];
   };
 
+  select.transition = function() {
+    return eo_transition(select);
+  };
+
   return select;
 };
 

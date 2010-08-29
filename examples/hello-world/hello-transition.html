@@ -1,0 +1,68 @@
+<html>
+  <head>
+    <title>Hello, transition!</title>
+    <script type="text/javascript" src="../../epheme.js"></script>
+  </head>
+  <body>
+    Your lucky numbers are:<br>
+    <script type="text/javascript">
+
+var eo = org.epheme;
+
+var data = [4, 8, 15, 16, 23, 42];
+
+var map = eo.map(data)
+    .by(function(d, i) { return "id('lucky-" + i + "')"; })
+    .from("//body/div")
+    .on("enter", enter)
+    .on("exit", exit)
+    .on("update", update)
+    .apply();
+
+function enter(e) {
+  eo.select("//body")
+    .add("div")
+      .attr("id", "lucky-" + e.index)
+    .add("svg:svg")
+      .style("padding-left", "10%")
+      .style("padding-right", "10%")
+      .attr("width", "80%")
+      .attr("height", "40pt")
+    .add("svg:text")
+      .attr("x", e.data + "%")
+      .attr("y", "50%")
+      .attr("dy", ".35em")
+      .attr("text-anchor", "middle")
+      .attr("fill", "white")
+      .attr("stroke", "black")
+      .attr("stroke-width", 1.5)
+      .style("font", "36pt Comic Sans MS")
+      .style("text-shadow", "3px 3px 3px rgba(0,0,0,.4)")
+      .text(e.data);
+}
+
+function update(e) {
+  eo.select(e.target)
+    .select(".//svg:text")
+    .transition()
+      .duration(1000)
+      .ease("elastic")
+      .attr("x", e.data + "%")
+      .text(e.data);
+}
+
+function exit(e) {
+  eo.select(e.target)
+      .remove();
+}
+
+function refresh() {
+  for (var i = 0; i < data.length; i++) data[i] = ~~(Math.random() * 100);
+  map.apply();
+}
+
+setInterval(refresh, 1000);
+
+    </script>
+  </body>
+</html>

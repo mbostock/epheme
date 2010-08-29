@@ -7,6 +7,7 @@ SRC_FILES = \
 	src/ns.js \
 	src/dispatch.js \
 	src/select.js \
+	src/transition.js \
 	src/map.js \
 	src/ease.js \
 	src/end.js
