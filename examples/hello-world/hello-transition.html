@@ -20,8 +20,7 @@ var map = eo.map(data)
     .apply();
 
 function enter(e) {
-  eo.select("//body")
-    .add("div")
+  eo.select("//body").add("div")
       .attr("id", "lucky-" + e.index)
     .add("svg:svg")
       .style("padding-left", "10%")
@@ -42,8 +41,7 @@ function enter(e) {
 }
 
 function update(e) {
-  eo.select(e.target)
-    .select(".//svg:text")
+  e.target.select(".//svg:text")
     .transition()
       .duration(1000)
       .ease("elastic")
@@ -52,8 +50,7 @@ function update(e) {
 }
 
 function exit(e) {
-  eo.select(e.target)
-      .remove();
+  e.target.remove();
 }
 
 function refresh() {

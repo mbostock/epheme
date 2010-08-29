@@ -69,6 +69,7 @@ function eo_transition(select) {
 
   // TODO attribute-aware tweens, such as color
   // TODO allow values to be specified as a function
+  // TODO evaluate the text function value first
 
   transition.attr = function(n, v) {
     for (var i = 0; i < select.length(); i++) {
@@ -83,11 +84,10 @@ function eo_transition(select) {
   };
 
   transition.text = function(v) {
-    // TODO evaluate the text function first
-    var applied;
+    var t1 = .5;
     tweens.push(function(t) {
-      if (t >= .5) {
-        applied = true;
+      if (t >= t1) {
+        t1 = NaN;
         select.text(v);
       }
     });

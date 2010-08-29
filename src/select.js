@@ -2,6 +2,8 @@ eo.select = function(e) {
   var select = {},
       items;
 
+  // TODO optimize implementation for single-element selections?
+
   if (typeof e == "string") {
     xpath(e, document, items = []);
   } else if (e instanceof Array) {
@@ -21,10 +23,16 @@ eo.select = function(e) {
   };
 
   select.add = function(n) {
+    n = ns.qualify(n);
     var children = [];
-    for (var i = 0; i < items.length; i++) {
-      var e = items[i];
-      children.push(e.appendChild(ns.create(n)));
+    if (n.space) {
+      for (var i = 0; i < items.length; i++) {
+        children.push(items[i].appendChild(document.createElementNS(n.space, n.local)));
+      }
+    } else {
+      for (var i = 0; i < items.length; i++) {
+        children.push(items[i].appendChild(document.createElement(n)));
+      }
     }
     return eo.select(children);
   };
@@ -42,7 +50,26 @@ eo.select = function(e) {
   // would return the value of the opacity attribute on the active node.
 
   select.attr = function(n, v) {
-    if (v == null) {
+    n = ns.qualify(n);
+    if (n.space) {
+      if (v == null) {
+        for (var i = 0; i < items.length; i++) {
+          items[i].removeAttributeNS(n.space, n.local);
+        }
+      } else if (typeof v == "function") {
+        for (var i = 0; i < items.length; i++) {
+          var e = items[i],
+              x = v.call(select, e, i);
+          x == null
+              ? e.removeAttributeNS(n.space, n.local)
+              : e.setAttributeNS(n.space, n.local, x);
+        }
+      } else {
+        for (var i = 0; i < items.length; i++) {
+          items[i].setAttributeNS(n.space, n.local, v);
+        }
+      }
+    } else if (v == null) {
       for (var i = 0; i < items.length; i++) {
         items[i].removeAttribute(n);
       }

@@ -40,14 +40,11 @@ function enter(e) {
 }
 
 function update(e) {
-  eo.select(e.target)
-    .select("svg:text")
-      .text(e.data);
+  e.target.select("svg:text").text(e.data);
 }
 
 function exit(e) {
-  eo.select(e.target)
-      .remove();
+  e.target.remove();
 }
 
 function refresh() {

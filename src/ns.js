@@ -14,17 +14,10 @@ var ns = {
 
   qualify: function(name) {
     var i = name.indexOf(":");
-    return {
+    return i < 0 ? name : {
       space: ns.prefix[name.substring(0, i)],
       local: name.substring(i + 1)
     };
-  },
-
-  create: function(name) {
-    name = ns.qualify(name);
-    return name.space == null
-        ? document.createElement(name.local)
-        : document.createElementNS(name.space, name.local);
   }
 
 };

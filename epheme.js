@@ -18,17 +18,10 @@ var ns = {
 
   qualify: function(name) {
     var i = name.indexOf(":");
-    return {
+    return i < 0 ? name : {
       space: ns.prefix[name.substring(0, i)],
       local: name.substring(i + 1)
     };
-  },
-
-  create: function(name) {
-    name = ns.qualify(name);
-    return name.space == null
-        ? document.createElement(name.local)
-        : document.createElementNS(name.space, name.local);
   }
 
 };
@@ -71,6 +64,8 @@ eo.select = function(e) {
   var select = {},
       items;
 
+  // TODO optimize implementation for single-element selections?
+
   if (typeof e == "string") {
     xpath(e, document, items = []);
   } else if (e instanceof Array) {
@@ -90,10 +85,16 @@ eo.select = function(e) {
   };
 
   select.add = function(n) {
+    n = ns.qualify(n);
     var children = [];
-    for (var i = 0; i < items.length; i++) {
-      var e = items[i];
-      children.push(e.appendChild(ns.create(n)));
+    if (n.space) {
+      for (var i = 0; i < items.length; i++) {
+        children.push(items[i].appendChild(document.createElementNS(n.space, n.local)));
+      }
+    } else {
+      for (var i = 0; i < items.length; i++) {
+        children.push(items[i].appendChild(document.createElement(n)));
+      }
     }
     return eo.select(children);
   };
@@ -111,7 +112,26 @@ eo.select = function(e) {
   // would return the value of the opacity attribute on the active node.
 
   select.attr = function(n, v) {
-    if (v == null) {
+    n = ns.qualify(n);
+    if (n.space) {
+      if (v == null) {
+        for (var i = 0; i < items.length; i++) {
+          items[i].removeAttributeNS(n.space, n.local);
+        }
+      } else if (typeof v == "function") {
+        for (var i = 0; i < items.length; i++) {
+          var e = items[i],
+              x = v.call(select, e, i);
+          x == null
+              ? e.removeAttributeNS(n.space, n.local)
+              : e.setAttributeNS(n.space, n.local, x);
+        }
+      } else {
+        for (var i = 0; i < items.length; i++) {
+          items[i].setAttributeNS(n.space, n.local, v);
+        }
+      }
+    } else if (v == null) {
       for (var i = 0; i < items.length; i++) {
         items[i].removeAttribute(n);
       }
@@ -277,6 +297,7 @@ function eo_transition(select) {
 
   // TODO attribute-aware tweens, such as color
   // TODO allow values to be specified as a function
+  // TODO evaluate the text function value first
 
   transition.attr = function(n, v) {
     for (var i = 0; i < select.length(); i++) {
@@ -291,11 +312,10 @@ function eo_transition(select) {
   };
 
   transition.text = function(v) {
-    // TODO evaluate the text function first
-    var applied;
+    var t1 = .5;
     tweens.push(function(t) {
-      if (t >= .5) {
-        applied = true;
+      if (t >= t1) {
+        t1 = NaN;
         select.text(v);
       }
     });
@@ -346,14 +366,15 @@ eo.map = function(data) {
 
     var items = [];
     for (var i = 0; i < data.length; i++) {
-      var d = data[i], s = eo.select(by.call(map, d, i)), e;
-      if (s.length()) {
-        e = s.item(0);
-        update.call(map, {type: "update", target: e, data: d, index: i});
+      var d = data[i],
+          s = eo.select(by.call(map, d, i)),
+          n = s.length();
+      if (n) {
+        update.call(map, {type: "update", target: s, data: d, index: i});
+        for (var j = 0; j < n; j++) items.push(s.item(j));
       } else {
         map.dispatch({type: "enter", data: d, index: i});
       }
-      items.push(e);
     }
 
     for (var i = 0; i < froms.length(); i++) {

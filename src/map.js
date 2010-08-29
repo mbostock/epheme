@@ -40,14 +40,15 @@ eo.map = function(data) {
 
     var items = [];
     for (var i = 0; i < data.length; i++) {
-      var d = data[i], s = eo.select(by.call(map, d, i)), e;
-      if (s.length()) {
-        e = s.item(0);
-        update.call(map, {type: "update", target: e, data: d, index: i});
+      var d = data[i],
+          s = eo.select(by.call(map, d, i)),
+          n = s.length();
+      if (n) {
+        update.call(map, {type: "update", target: s, data: d, index: i});
+        for (var j = 0; j < n; j++) items.push(s.item(j));
       } else {
         map.dispatch({type: "enter", data: d, index: i});
       }
-      items.push(e);
     }
 
     for (var i = 0; i < froms.length(); i++) {
