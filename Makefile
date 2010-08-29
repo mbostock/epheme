@@ -5,7 +5,9 @@ JS_COMPILER = \
 SRC_FILES = \
 	src/start.js \
 	src/ns.js \
+	src/dispatch.js \
 	src/select.js \
+	src/map.js \
 	src/ease.js \
 	src/end.js
 

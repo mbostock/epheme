@@ -3,12 +3,22 @@ eo.select = function(e) {
       items;
 
   if (typeof e == "string") {
-    items = xpath(e);
+    xpath(e, document, items = []);
   } else if (e instanceof Array) {
     items = e.slice();
   } else {
     items = [e];
   }
+
+  // TODO does it make sense if e is not a string for subselect?
+
+  select.select = function(e) {
+    var subitems = [];
+    for (var i = 0; i < items.length; i++) {
+      xpath(e, items[i], subitems);
+    }
+    return eo.select(subitems);
+  };
 
   select.add = function(n) {
     var children = [];
@@ -17,6 +27,14 @@ eo.select = function(e) {
       children.push(e.appendChild(ns.create(n)));
     }
     return eo.select(children);
+  };
+
+  select.remove = function() {
+    for (var i = 0; i < items.length; i++) {
+      var e = items[i];
+      if (e.parentNode) e.parentNode.removeChild(e);
+    }
+    return select;
   };
 
   // TODO argument to value function should be a selector? Alternatively, the
@@ -31,7 +49,7 @@ eo.select = function(e) {
     } else if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
         var e = items[i],
-            x = v.call(select, e);
+            x = v.call(select, e, i);
         x == null
             ? e.removeAttribute(n)
             : e.setAttribute(n, x);
@@ -53,7 +71,7 @@ eo.select = function(e) {
     } else if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
         var e = items[i],
-            x = v.call(select, e);
+            x = v.call(select, e, i);
         x == null
             ? e.style.removeProperty(n)
             : e.style.setProperty(n, x, p);
@@ -77,7 +95,7 @@ eo.select = function(e) {
     } else if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
         var e = items[i],
-            x = v.call(select, e);
+            x = v.call(select, e, i);
         if (x == null) {
           if (e.firstChild) e.removeChlid(e.firstChild);
         } else {
@@ -106,15 +124,12 @@ eo.select = function(e) {
   return select;
 };
 
-function xpath(e) {
-  var items = [],
-      item,
-      xpr = document.evaluate(
-          e, // XPath expression
-          document, // context node
-          ns.resolve, // namespace resolver
-          XPathResult.UNORDERED_NODE_ITERATOR_TYPE, // result type
-          null); // result object
-  while ((item = xpr.iterateNext()) != null) items.push(item);
-  return items;
+function xpath(e, c, items) {
+  var i, x = document.evaluate(
+      e, // XPath expression
+      c, // context node
+      ns.resolve, // namespace resolver
+      XPathResult.UNORDERED_NODE_ITERATOR_TYPE, // result type
+      null); // result object
+  while ((i = x.iterateNext()) != null) items.push(i);
 }
