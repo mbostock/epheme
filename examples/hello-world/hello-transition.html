@@ -20,14 +20,25 @@ var map = eo.map(data)
     .apply();
 
 function enter(e) {
-  e.target.select("//body").add("div")
+  var svg = e.target.select("//body").add("div")
       .attr("id", function(d, i) { return "lucky-" + i; }) // TODO this index is wrong
     .add("svg:svg")
       .style("padding-left", "10%")
       .style("padding-right", "10%")
       .attr("width", "80%")
-      .attr("height", "40pt")
-    .add("svg:text")
+      .attr("height", "40pt");
+
+  svg.add("svg:line")
+      .attr("x1", "0%")
+      .attr("x2", function(d) { return d + "%"; })
+      .attr("y1", "50%")
+      .attr("y2", "50%")
+      .attr("dy", ".35em")
+      .attr("fill", "none")
+      .attr("stroke", "black")
+      .attr("stroke-width", 1.5);
+
+  svg.add("svg:text")
       .attr("x", function(d) { return d + "%"; })
       .attr("y", "50%")
       .attr("dy", ".35em")
@@ -41,11 +52,20 @@ function enter(e) {
 }
 
 function update(e) {
-  e.target.select(".//svg:text")
+  var svg = e.target.select("svg:svg");
+
+  svg.select("svg:line")
+    .transition()
+      .duration(750)
+      .ease("elastic")
+      .attr("x2", function(d) { return d + "%"; });
+
+  svg.select("svg:text")
     .transition()
       .duration(750)
       .ease("elastic")
       .attr("x", function(d) { return d + "%"; })
+      .attr("fill", function(d) { return d > 50 ? "red" : "green"; })
       .text(function(d) { return d; });
 }
 

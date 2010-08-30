@@ -96,6 +96,7 @@ function eo_transition(items, data) {
   };
 
   // TODO attribute-aware tweens, such as color
+  // TODO subselect within a transition!
 
   transition.attr = function(n, v) {
     if (typeof v == "function") {
