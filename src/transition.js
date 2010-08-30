@@ -1,4 +1,4 @@
-function eo_transition(select) {
+function eo_transition(items, data) {
   var transition = {},
       repeatInterval = 24,
       repeatDelay = repeatInterval,
@@ -40,7 +40,7 @@ function eo_transition(select) {
       return function(t) {
         if (t >= t1) {
           t1 = NaN;
-          eo.select(e).attr(n, v);
+          eo_select(e).attr(n, v);
         }
       };
     };
@@ -58,7 +58,7 @@ function eo_transition(select) {
     return function(t) {
       if (t >= t1) {
         t1 = NaN;
-        eo.select(e).style(n, v, p);
+        eo_select(e).style(n, v, p);
       }
     };
   }
@@ -68,7 +68,7 @@ function eo_transition(select) {
     return function(t) {
       if (t >= t1) {
         t1 = NaN;
-        eo.select(e).text(v);
+        eo_select(e).text(v);
       }
     };
   }
@@ -99,12 +99,12 @@ function eo_transition(select) {
 
   transition.attr = function(n, v) {
     if (typeof v == "function") {
-      for (var i = 0; i < select.length(); i++) {
-        tweens.push(tweenAttr(select.item(i), n, v.call(select, select.datum(i), i)));
+      for (var i = 0; i < items.length; i++) {
+        tweens.push(tweenAttr(items[i], n, v.call(transition, data[i], i)));
       }
     } else {
-      for (var i = 0; i < select.length(); i++) {
-        tweens.push(tweenAttr(select.item(i), n, v));
+      for (var i = 0; i < items.length; i++) {
+        tweens.push(tweenAttr(items[i], n, v));
       }
     }
     return transition;
@@ -113,12 +113,12 @@ function eo_transition(select) {
   transition.style = function(n, v, p) {
     if (arguments.length < 3) p = null;
     if (typeof v == "function") {
-      for (var i = 0; i < select.length(); i++) {
-        tweens.push(tweenStyle(select.item(i), n, v.call(select, select.datum(i), i), p));
+      for (var i = 0; i < items.length; i++) {
+        tweens.push(tweenStyle(items[i], n, v.call(transition, data[i], i), p));
       }
     } else {
-      for (var i = 0; i < select.length(); i++) {
-        tweens.push(tweenStyle(select.item(i), n, v, p));
+      for (var i = 0; i < items.length; i++) {
+        tweens.push(tweenStyle(items[i], n, v, p));
       }
     }
     return transition;
@@ -126,12 +126,12 @@ function eo_transition(select) {
 
   transition.text = function(v) {
     if (typeof v == "function") {
-      for (var i = 0; i < select.length(); i++) {
-        tweens.push(tweenText(select.item(i), v.call(select, select.datum(i), i)));
+      for (var i = 0; i < items.length; i++) {
+        tweens.push(tweenText(items[i], v.call(transition, data[i], i)));
       }
     } else {
-      for (var i = 0; i < select.length(); i++) {
-        tweens.push(tweenText(select.item(i), v));
+      for (var i = 0; i < items.length; i++) {
+        tweens.push(tweenText(items[i], v));
       }
     }
     return transition;

@@ -6,15 +6,6 @@ eo.map = function(data) {
   eo.dispatch(map);
 
   // TODO defensive copy of data?
-  // TODO is it right to expose the length & datum methods?
-
-  map.length = function() {
-    return data.length;
-  };
-
-  map.datum = function(i) {
-    return data[i];
-  };
 
   map.from = function(e) {
     if (!arguments.length) return from;
@@ -44,7 +35,7 @@ eo.map = function(data) {
         updated = [], updatedData = [];
     for (var i = 0; i < data.length; i++) {
       var d = data[i],
-          s = eo.select(by.call(map, d, i)),
+          s = eo_select(by.call(map, d, i)),
           n = s.length();
       if (n) {
         for (var j = 0; j < n; j++) {
@@ -57,7 +48,7 @@ eo.map = function(data) {
       }
     }
 
-    var removed = [], existing = eo.select(from);
+    var removed = [], existing = eo_select(from);
     outer: for (var i = 0; i < existing.length(); i++) {
       var e = existing.item(i), found = false;
       for (var j = 0; j < added.length; j++) {
@@ -69,9 +60,9 @@ eo.map = function(data) {
       removed.push(e);
     }
 
-    if (added.length) map.dispatch({type: "enter", target: eo.select(added, addedData)});
-    if (updated.length) map.dispatch({type: "update", target: eo.select(updated, updatedData)});
-    if (removed.length) map.dispatch({type: "exit", target: eo.select(removed)});
+    if (added.length) map.dispatch({type: "enter", target: eo_select(added, addedData)});
+    if (updated.length) map.dispatch({type: "update", target: eo_select(updated, updatedData)});
+    if (removed.length) map.dispatch({type: "exit", target: eo_select(removed)});
     return map;
   };
 

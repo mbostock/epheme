@@ -1,4 +1,8 @@
-eo.select = function(e, data) {
+eo.select = function(e) {
+  return eo_select(e);
+};
+
+function eo_select(e, data) {
   var select = {},
       items;
 
@@ -30,7 +34,7 @@ eo.select = function(e, data) {
         for (var d = data[i]; j < subitems.length; j++) subdata.push(d);
       }
     }
-    return eo.select(subitems, subdata);
+    return eo_select(subitems, subdata);
   };
 
   select.add = function(n) {
@@ -45,7 +49,7 @@ eo.select = function(e, data) {
         children.push(items[i].appendChild(document.createElement(n)));
       }
     }
-    return eo.select(children, data);
+    return eo_select(children, data);
   };
 
   select.remove = function() {
@@ -165,15 +169,8 @@ eo.select = function(e, data) {
     return items[i];
   };
 
-  // TODO does it make sense to expose this datum method publicly?
-  // It'd be nice if we could somehow hide it inside the `map` object.
-
-  select.datum = function(i) {
-    return data[i];
-  };
-
   select.transition = function() {
-    return eo_transition(select);
+    return eo_transition(items, data);
   };
 
   return select;

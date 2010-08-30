@@ -60,7 +60,11 @@ eo.dispatch = function(that) {
     }
   };
 };
-eo.select = function(e, data) {
+eo.select = function(e) {
+  return eo_select(e);
+};
+
+function eo_select(e, data) {
   var select = {},
       items;
 
@@ -92,7 +96,7 @@ eo.select = function(e, data) {
         for (var d = data[i]; j < subitems.length; j++) subdata.push(d);
       }
     }
-    return eo.select(subitems, subdata);
+    return eo_select(subitems, subdata);
   };
 
   select.add = function(n) {
@@ -107,7 +111,7 @@ eo.select = function(e, data) {
         children.push(items[i].appendChild(document.createElement(n)));
       }
     }
-    return eo.select(children, data);
+    return eo_select(children, data);
   };
 
   select.remove = function() {
@@ -227,15 +231,8 @@ eo.select = function(e, data) {
     return items[i];
   };
 
-  // TODO does it make sense to expose this datum method publicly?
-  // It'd be nice if we could somehow hide it inside the `map` object.
-
-  select.datum = function(i) {
-    return data[i];
-  };
-
   select.transition = function() {
-    return eo_transition(select);
+    return eo_transition(items, data);
   };
 
   return select;
@@ -254,7 +251,7 @@ function xpath(e, c, items) {
 }
 
 var empty = {};
-function eo_transition(select) {
+function eo_transition(items, data) {
   var transition = {},
       repeatInterval = 24,
       repeatDelay = repeatInterval,
@@ -296,7 +293,7 @@ function eo_transition(select) {
       return function(t) {
         if (t >= t1) {
           t1 = NaN;
-          eo.select(e).attr(n, v);
+          eo_select(e).attr(n, v);
         }
       };
     };
@@ -314,7 +311,7 @@ function eo_transition(select) {
     return function(t) {
       if (t >= t1) {
         t1 = NaN;
-        eo.select(e).style(n, v, p);
+        eo_select(e).style(n, v, p);
       }
     };
   }
@@ -324,7 +321,7 @@ function eo_transition(select) {
     return function(t) {
       if (t >= t1) {
         t1 = NaN;
-        eo.select(e).text(v);
+        eo_select(e).text(v);
       }
     };
   }
@@ -355,12 +352,12 @@ function eo_transition(select) {
 
   transition.attr = function(n, v) {
     if (typeof v == "function") {
-      for (var i = 0; i < select.length(); i++) {
-        tweens.push(tweenAttr(select.item(i), n, v.call(select, select.datum(i), i)));
+      for (var i = 0; i < items.length; i++) {
+        tweens.push(tweenAttr(items[i], n, v.call(transition, data[i], i)));
       }
     } else {
-      for (var i = 0; i < select.length(); i++) {
-        tweens.push(tweenAttr(select.item(i), n, v));
+      for (var i = 0; i < items.length; i++) {
+        tweens.push(tweenAttr(items[i], n, v));
       }
     }
     return transition;
@@ -369,12 +366,12 @@ function eo_transition(select) {
   transition.style = function(n, v, p) {
     if (arguments.length < 3) p = null;
     if (typeof v == "function") {
-      for (var i = 0; i < select.length(); i++) {
-        tweens.push(tweenStyle(select.item(i), n, v.call(select, select.datum(i), i), p));
+      for (var i = 0; i < items.length; i++) {
+        tweens.push(tweenStyle(items[i], n, v.call(transition, data[i], i), p));
       }
     } else {
-      for (var i = 0; i < select.length(); i++) {
-        tweens.push(tweenStyle(select.item(i), n, v, p));
+      for (var i = 0; i < items.length; i++) {
+        tweens.push(tweenStyle(items[i], n, v, p));
       }
     }
     return transition;
@@ -382,12 +379,12 @@ function eo_transition(select) {
 
   transition.text = function(v) {
     if (typeof v == "function") {
-      for (var i = 0; i < select.length(); i++) {
-        tweens.push(tweenText(select.item(i), v.call(select, select.datum(i), i)));
+      for (var i = 0; i < items.length; i++) {
+        tweens.push(tweenText(items[i], v.call(transition, data[i], i)));
       }
     } else {
-      for (var i = 0; i < select.length(); i++) {
-        tweens.push(tweenText(select.item(i), v));
+      for (var i = 0; i < items.length; i++) {
+        tweens.push(tweenText(items[i], v));
       }
     }
     return transition;
@@ -403,15 +400,6 @@ eo.map = function(data) {
   eo.dispatch(map);
 
   // TODO defensive copy of data?
-  // TODO is it right to expose the length & datum methods?
-
-  map.length = function() {
-    return data.length;
-  };
-
-  map.datum = function(i) {
-    return data[i];
-  };
 
   map.from = function(e) {
     if (!arguments.length) return from;
@@ -441,7 +429,7 @@ eo.map = function(data) {
         updated = [], updatedData = [];
     for (var i = 0; i < data.length; i++) {
       var d = data[i],
-          s = eo.select(by.call(map, d, i)),
+          s = eo_select(by.call(map, d, i)),
           n = s.length();
       if (n) {
         for (var j = 0; j < n; j++) {
@@ -454,7 +442,7 @@ eo.map = function(data) {
       }
     }
 
-    var removed = [], existing = eo.select(from);
+    var removed = [], existing = eo_select(from);
     outer: for (var i = 0; i < existing.length(); i++) {
       var e = existing.item(i), found = false;
       for (var j = 0; j < added.length; j++) {
@@ -466,9 +454,9 @@ eo.map = function(data) {
       removed.push(e);
     }
 
-    if (added.length) map.dispatch({type: "enter", target: eo.select(added, addedData)});
-    if (updated.length) map.dispatch({type: "update", target: eo.select(updated, updatedData)});
-    if (removed.length) map.dispatch({type: "exit", target: eo.select(removed)});
+    if (added.length) map.dispatch({type: "enter", target: eo_select(added, addedData)});
+    if (updated.length) map.dispatch({type: "update", target: eo_select(updated, updatedData)});
+    if (removed.length) map.dispatch({type: "exit", target: eo_select(removed)});
     return map;
   };
 
