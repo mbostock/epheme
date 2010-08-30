@@ -19,26 +19,7 @@ function eo_select(e, data) {
   }
 
   select.select = function(e) {
-    var subitems = [], subdata = empty;
-    if (typeof e == "string") {
-      if (data === empty) {
-        for (var i = 0; i < items.length; i++) {
-          xpath(e, items[i] || document, subitems);
-        }
-      } else {
-        subdata = [];
-        for (var i = 0, j = 0; i < items.length; i++) {
-          xpath(e, items[i] || document, subitems);
-          for (var d = data[i]; j < subitems.length; j++) subdata.push(d);
-        }
-      }
-    } else if (typeof e == "number") {
-      subitems.push(items[e]);
-      subdata = data === empty ? empty : data[e];
-    } else {
-      subitems = e;
-    }
-    return eo_select(subitems, subdata);
+    return eo_select.apply(null, eo_subselect(items, data, e));
   };
 
   select.add = function(n) {
@@ -190,7 +171,7 @@ function eo_select(e, data) {
   };
 
   select.transition = function() {
-    return eo_transition(items, data);
+    return eo_transitioner().select(items, data);
   };
 
   return select;
@@ -206,6 +187,29 @@ function xpath(e, c, items) {
       null); // result object
   while ((item = results.iterateNext()) != null) items.push(item);
   return items;
+}
+
+function eo_subselect(items, data, e) {
+  var subitems = [], subdata = empty;
+  if (typeof e == "string") {
+    if (data === empty) {
+      for (var i = 0; i < items.length; i++) {
+        xpath(e, items[i] || document, subitems);
+      }
+    } else {
+      subdata = [];
+      for (var i = 0, j = 0; i < items.length; i++) {
+        xpath(e, items[i] || document, subitems);
+        for (var d = data[i]; j < subitems.length; j++) subdata.push(d);
+      }
+    }
+  } else if (typeof e == "number") {
+    subitems.push(items[e]);
+    subdata = data === empty ? empty : data[e];
+  } else {
+    subitems = e;
+  }
+  return [subitems, subdata];
 }
 
 var empty = {};

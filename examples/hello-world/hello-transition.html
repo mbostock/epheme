@@ -9,74 +9,78 @@
 
 var eo = org.epheme;
 
-var data = [4, 8, 15, 16, 23, 42];
+// TODO would like a better way to track identifiers and indexes.
+
+var data = [
+  {id: 0, index: 0, value: 4},
+  {id: 1, index: 1, value: 8},
+  {id: 2, index: 2, value: 15},
+  {id: 3, index: 3, value: 16},
+  {id: 4, index: 4, value: 23},
+  {id: 5, index: 5, value: 42}
+];
+
+var n = data.length,
+    h = 60;
+
+eo.select("//body").add("svg:svg")
+    .style("padding-left", "10%")
+    .style("padding-right", "10%")
+    .attr("width", "80%")
+    .attr("height", h * n);
 
 var map = eo.map(data)
-    .by(function(d, i) { return "id('lucky-" + i + "')"; })
-    .from("//body/div")
+    .by(function(d) { return "id('lucky-" + d.id + "')"; })
+    .from("//svg:g")
     .on("enter", enter)
     .on("exit", exit)
     .on("update", update)
     .apply();
 
 function enter(e) {
-  var svg = e.target.select("//body").add("div")
-      .attr("id", function(d, i) { return "lucky-" + i; }) // TODO this index is wrong
-    .add("svg:svg")
-      .style("padding-left", "10%")
-      .style("padding-right", "10%")
-      .attr("width", "80%")
-      .attr("height", "40pt");
+  var g = e.target.select("//svg:svg").add("svg:g")
+      .attr("id", function(d) { return "lucky-" + d.id; })
+      .attr("transform", function(d) { return "translate(0," + (d.index + 1) * h + ")"; });
 
-  svg.add("svg:line")
-      .attr("x1", "0%")
-      .attr("x2", function(d) { return d + "%"; })
-      .attr("y1", "50%")
-      .attr("y2", "50%")
-      .attr("dy", ".35em")
-      .attr("fill", "none")
-      .attr("stroke", "black")
-      .attr("stroke-width", 1.5);
-
-  svg.add("svg:text")
-      .attr("x", function(d) { return d + "%"; })
-      .attr("y", "50%")
+  g.add("svg:text")
+      .attr("x", function(d) { return d.value + "%"; })
+      .attr("y", h / 2)
       .attr("dy", ".35em")
       .attr("text-anchor", "middle")
-      .attr("fill", "white")
-      .attr("stroke", "black")
-      .attr("stroke-width", 1.5)
-      .style("font", "36pt Comic Sans MS")
-      .style("text-shadow", "3px 3px 3px rgba(0,0,0,.4)")
-      .text(function(d) { return d; });
+      .attr("fill", function(d) { return d.value < 50 ? "steelblue" : "brown"; })
+      .style("font", "32pt Helvetica Neue")
+      .style("font-weight", 300)
+      .text(function(d) { return d.value; });
+
+  g.transition()
+      .duration(1000)
+      .ease("elastic")
+      .attr("transform", function(d) { return "translate(0," + d.index * h + ")"; });
 }
 
 function update(e) {
-  var svg = e.target.select("svg:svg");
-
-  svg.select("svg:line").transition()
-      .duration(2500)
+  e.target.transition()
+      .duration(1000)
       .ease("elastic")
-      .attr("x2", function(d) { return d + "%"; });
-
-  svg.select("svg:text").transition()
-      .duration(2500)
-      .ease("elastic")
-      .attr("x", function(d) { return d + "%"; })
-      .attr("fill", function(d) { return d > 50 ? "red" : "green"; })
-      .text(function(d) { return d; });
+      .attr("transform", function(d) { return "translate(0," + d.index * h + ")"; });
 }
 
 function exit(e) {
-  e.target.remove();
+  e.target.transition()
+      .duration(1000)
+      .ease("elastic")
+      .attr("transform", function(d) { return "translate(0," + -h + ")"; })
+      .on("end", function() { e.target.remove(); });
 }
 
 function refresh() {
-  for (var i = 0; i < data.length; i++) data[i] = ~~(Math.random() * 100);
+  data.shift();
+  data.push({id: Date.now(), value: ~~(Math.random() * 100)});
+  for (var i = 0; i < data.length; i++) data[i].index = i;
   map.apply();
 }
 
-setInterval(refresh, 3000);
+setInterval(refresh, 1000);
 
     </script>
   </body>

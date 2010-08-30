@@ -4,10 +4,10 @@ eo.dispatch = function(that) {
   that.on = function(type, handler) {
     var listeners = types[type] || (types[type] = []);
     for (var i = 0; i < listeners.length; i++) {
-      if (listeners[i].handler == handler) return that; // already registered
+      if (listeners[i].handler == handler) return this; // already registered
     }
     listeners.push({handler: handler, on: true});
-    return that;
+    return this;
   };
 
   that.off = function(type, handler) {
@@ -20,7 +20,7 @@ eo.dispatch = function(that) {
         break;
       }
     }
-    return that;
+    return this;
   };
 
   that.dispatch = function(event) {
