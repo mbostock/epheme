@@ -31,6 +31,8 @@ eo.map = function(data) {
   map.apply = function(update) {
     if (!arguments.length) update = map.dispatch;
 
+    // TODO merge selections...
+
     var added = [], addedData = [],
         updated = [], updatedData = [];
     for (var i = 0; i < data.length; i++) {

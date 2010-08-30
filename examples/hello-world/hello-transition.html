@@ -54,15 +54,13 @@ function enter(e) {
 function update(e) {
   var svg = e.target.select("svg:svg");
 
-  svg.select("svg:line")
-    .transition()
-      .duration(750)
+  svg.select("svg:line").transition()
+      .duration(2500)
       .ease("elastic")
       .attr("x2", function(d) { return d + "%"; });
 
-  svg.select("svg:text")
-    .transition()
-      .duration(750)
+  svg.select("svg:text").transition()
+      .duration(2500)
       .ease("elastic")
       .attr("x", function(d) { return d + "%"; })
       .attr("fill", function(d) { return d > 50 ? "red" : "green"; })
@@ -78,7 +76,7 @@ function refresh() {
   map.apply();
 }
 
-setInterval(refresh, 1000);
+setInterval(refresh, 3000);
 
     </script>
   </body>

@@ -5,6 +5,7 @@ function eo_transition(items, data) {
       duration = 250,
       ease = eo.ease("cubic-in-out"),
       then,
+      triggers = [{t: NaN}],
       tweens = [],
       timer,
       interval;
@@ -14,20 +15,25 @@ function eo_transition(items, data) {
 
   timer = setTimeout(start, repeatDelay);
 
+  eo.dispatch(transition);
+
   function start() {
     timer = 0;
     then = Date.now();
     repeat();
+    transition.dispatch({type: "start"});
     interval = setInterval(repeat, repeatInterval);
   }
 
   function repeat() {
     var t = Math.max(0, Math.min(1, (Date.now() - then) / duration)),
         te = ease(t);
+    while (te >= triggers[triggers.length - 1].t) triggers.pop().f();
     for (var i = 0; i < tweens.length; i++) tweens[i](te);
     if (t == 1) {
       clearInterval(interval);
       interval = 0;
+      transition.dispatch({type: "end"});
     }
   }
 
@@ -36,41 +42,21 @@ function eo_transition(items, data) {
         v1 = parseFloat(v),
         units = "%"; // TODO!
     if (isNaN(v0) || isNaN(v1)) {
-      var t1 = .5;
-      return function(t) {
-        if (t >= t1) {
-          t1 = NaN;
-          eo_select(e).attr(n, v);
-        }
-      };
+      triggers.push({t: .5, f: function() { eo_select(e).attr(n, v); }});
+      return;
     };
     n = ns.qualify(n);
-    if (n.space) return function(t) {
-      e.setAttributeNS(n.space, n.local, v0 * (1 - t) + v1 * t + units);
-    };
-    return function(t) {
-      e.setAttribute(n, v0 * (1 - t) + v1 * t + units);
-    };
+    tweens.push(n.space
+        ? function(t) { e.setAttributeNS(n.space, n.local, v0 * (1 - t) + v1 * t + units); }
+        : function(t) { e.setAttribute(n, v0 * (1 - t) + v1 * t + units); });
   }
 
   function tweenStyle(e, n, v, p) {
-    var t1 = .5;
-    return function(t) {
-      if (t >= t1) {
-        t1 = NaN;
-        eo_select(e).style(n, v, p);
-      }
-    };
+    triggers.push({t: .5, f: function() { eo_select(e).style(n, v, p); }});
   }
 
   function tweenText(e, v) {
-    var t1 = .5;
-    return function(t) {
-      if (t >= t1) {
-        t1 = NaN;
-        eo_select(e).text(v);
-      }
-    };
+    triggers.push({t: .5, f: function() { eo_select(e).text(v); }});
   }
 
   transition.duration = function(x) {
@@ -101,11 +87,11 @@ function eo_transition(items, data) {
   transition.attr = function(n, v) {
     if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
-        tweens.push(tweenAttr(items[i], n, v.call(transition, data[i], i)));
+        tweenAttr(items[i], n, v.call(transition, data[i], i));
       }
     } else {
       for (var i = 0; i < items.length; i++) {
-        tweens.push(tweenAttr(items[i], n, v));
+        tweenAttr(items[i], n, v);
       }
     }
     return transition;
@@ -115,11 +101,11 @@ function eo_transition(items, data) {
     if (arguments.length < 3) p = null;
     if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
-        tweens.push(tweenStyle(items[i], n, v.call(transition, data[i], i), p));
+        tweenStyle(items[i], n, v.call(transition, data[i], i), p);
       }
     } else {
       for (var i = 0; i < items.length; i++) {
-        tweens.push(tweenStyle(items[i], n, v, p));
+        tweenStyle(items[i], n, v, p);
       }
     }
     return transition;
@@ -128,11 +114,11 @@ function eo_transition(items, data) {
   transition.text = function(v) {
     if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
-        tweens.push(tweenText(items[i], v.call(transition, data[i], i)));
+        tweenText(items[i], v.call(transition, data[i], i));
       }
     } else {
       for (var i = 0; i < items.length; i++) {
-        tweens.push(tweenText(items[i], v));
+        tweenText(items[i], v);
       }
     }
     return transition;

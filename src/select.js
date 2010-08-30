@@ -18,21 +18,25 @@ function eo_select(e, data) {
     items = [e];
   }
 
-  // TODO does it make sense if e is not a string for subselect?
-
   select.select = function(e) {
-    var subitems = [];
-    if (data === empty) {
-      var subdata = empty;
-      for (var i = 0; i < items.length; i++) {
-        xpath(e, items[i] || document, subitems);
+    var subitems = [], subdata = empty;
+    if (typeof e == "string") {
+      if (data === empty) {
+        for (var i = 0; i < items.length; i++) {
+          xpath(e, items[i] || document, subitems);
+        }
+      } else {
+        subdata = [];
+        for (var i = 0, j = 0; i < items.length; i++) {
+          xpath(e, items[i] || document, subitems);
+          for (var d = data[i]; j < subitems.length; j++) subdata.push(d);
+        }
       }
+    } else if (typeof e == "number") {
+      subitems.push(items[e]);
+      subdata = data === empty ? empty : data[e];
     } else {
-      var subdata = [];
-      for (var i = 0, j = 0; i < items.length; i++) {
-        xpath(e, items[i] || document, subitems);
-        for (var d = data[i]; j < subitems.length; j++) subdata.push(d);
-      }
+      subitems = e;
     }
     return eo_select(subitems, subdata);
   };
@@ -72,6 +76,12 @@ function eo_select(e, data) {
 
   select.attr = function(n, v) {
     n = ns.qualify(n);
+    if (arguments.length < 2) {
+      return items.length
+          ? (n.space ? items[0].getAttributeNS(n.space, n.local)
+          : items[0].getAttribute(n))
+          : null;
+    }
     if (n.space) {
       if (v == null) {
         for (var i = 0; i < items.length; i++) {
@@ -111,6 +121,11 @@ function eo_select(e, data) {
   };
 
   select.style = function(n, v, p) {
+    if (arguments.length < 2) {
+      return items.length
+          ? items[0].style.getPropertyValue(n)
+          : null;
+    }
     if (arguments.length < 3) p = null;
     if (v == null) {
       for (var i = 0; i < items.length; i++) {
@@ -135,6 +150,11 @@ function eo_select(e, data) {
   // TODO text assumes that there is exactly 1 text node chlid
 
   select.text = function(v) {
+    if (!arguments.length) {
+      return items.length && items[0].firstChild
+          ? items[0].firstChild.nodeValue
+          : null;
+    }
     if (v == null) {
       for (var i = 0; i < items.length; i++) {
         var e = items[i];

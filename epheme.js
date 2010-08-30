@@ -80,21 +80,25 @@ function eo_select(e, data) {
     items = [e];
   }
 
-  // TODO does it make sense if e is not a string for subselect?
-
   select.select = function(e) {
-    var subitems = [];
-    if (data === empty) {
-      var subdata = empty;
-      for (var i = 0; i < items.length; i++) {
-        xpath(e, items[i] || document, subitems);
+    var subitems = [], subdata = empty;
+    if (typeof e == "string") {
+      if (data === empty) {
+        for (var i = 0; i < items.length; i++) {
+          xpath(e, items[i] || document, subitems);
+        }
+      } else {
+        subdata = [];
+        for (var i = 0, j = 0; i < items.length; i++) {
+          xpath(e, items[i] || document, subitems);
+          for (var d = data[i]; j < subitems.length; j++) subdata.push(d);
+        }
       }
+    } else if (typeof e == "number") {
+      subitems.push(items[e]);
+      subdata = data === empty ? empty : data[e];
     } else {
-      var subdata = [];
-      for (var i = 0, j = 0; i < items.length; i++) {
-        xpath(e, items[i] || document, subitems);
-        for (var d = data[i]; j < subitems.length; j++) subdata.push(d);
-      }
+      subitems = e;
     }
     return eo_select(subitems, subdata);
   };
@@ -134,6 +138,12 @@ function eo_select(e, data) {
 
   select.attr = function(n, v) {
     n = ns.qualify(n);
+    if (arguments.length < 2) {
+      return items.length
+          ? (n.space ? items[0].getAttributeNS(n.space, n.local)
+          : items[0].getAttribute(n))
+          : null;
+    }
     if (n.space) {
       if (v == null) {
         for (var i = 0; i < items.length; i++) {
@@ -173,6 +183,11 @@ function eo_select(e, data) {
   };
 
   select.style = function(n, v, p) {
+    if (arguments.length < 2) {
+      return items.length
+          ? items[0].style.getPropertyValue(n)
+          : null;
+    }
     if (arguments.length < 3) p = null;
     if (v == null) {
       for (var i = 0; i < items.length; i++) {
@@ -197,6 +212,11 @@ function eo_select(e, data) {
   // TODO text assumes that there is exactly 1 text node chlid
 
   select.text = function(v) {
+    if (!arguments.length) {
+      return items.length && items[0].firstChild
+          ? items[0].firstChild.nodeValue
+          : null;
+    }
     if (v == null) {
       for (var i = 0; i < items.length; i++) {
         var e = items[i];
@@ -258,6 +278,7 @@ function eo_transition(items, data) {
       duration = 250,
       ease = eo.ease("cubic-in-out"),
       then,
+      triggers = [{t: NaN}],
       tweens = [],
       timer,
       interval;
@@ -267,20 +288,25 @@ function eo_transition(items, data) {
 
   timer = setTimeout(start, repeatDelay);
 
+  eo.dispatch(transition);
+
   function start() {
     timer = 0;
     then = Date.now();
     repeat();
+    transition.dispatch({type: "start"});
     interval = setInterval(repeat, repeatInterval);
   }
 
   function repeat() {
     var t = Math.max(0, Math.min(1, (Date.now() - then) / duration)),
         te = ease(t);
+    while (te >= triggers[triggers.length - 1].t) triggers.pop().f();
     for (var i = 0; i < tweens.length; i++) tweens[i](te);
     if (t == 1) {
       clearInterval(interval);
       interval = 0;
+      transition.dispatch({type: "end"});
     }
   }
 
@@ -289,41 +315,21 @@ function eo_transition(items, data) {
         v1 = parseFloat(v),
         units = "%"; // TODO!
     if (isNaN(v0) || isNaN(v1)) {
-      var t1 = .5;
-      return function(t) {
-        if (t >= t1) {
-          t1 = NaN;
-          eo_select(e).attr(n, v);
-        }
-      };
+      triggers.push({t: .5, f: function() { eo_select(e).attr(n, v); }});
+      return;
     };
     n = ns.qualify(n);
-    if (n.space) return function(t) {
-      e.setAttributeNS(n.space, n.local, v0 * (1 - t) + v1 * t + units);
-    };
-    return function(t) {
-      e.setAttribute(n, v0 * (1 - t) + v1 * t + units);
-    };
+    tweens.push(n.space
+        ? function(t) { e.setAttributeNS(n.space, n.local, v0 * (1 - t) + v1 * t + units); }
+        : function(t) { e.setAttribute(n, v0 * (1 - t) + v1 * t + units); });
   }
 
   function tweenStyle(e, n, v, p) {
-    var t1 = .5;
-    return function(t) {
-      if (t >= t1) {
-        t1 = NaN;
-        eo_select(e).style(n, v, p);
-      }
-    };
+    triggers.push({t: .5, f: function() { eo_select(e).style(n, v, p); }});
   }
 
   function tweenText(e, v) {
-    var t1 = .5;
-    return function(t) {
-      if (t >= t1) {
-        t1 = NaN;
-        eo_select(e).text(v);
-      }
-    };
+    triggers.push({t: .5, f: function() { eo_select(e).text(v); }});
   }
 
   transition.duration = function(x) {
@@ -349,15 +355,16 @@ function eo_transition(items, data) {
   };
 
   // TODO attribute-aware tweens, such as color
+  // TODO subselect within a transition!
 
   transition.attr = function(n, v) {
     if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
-        tweens.push(tweenAttr(items[i], n, v.call(transition, data[i], i)));
+        tweenAttr(items[i], n, v.call(transition, data[i], i));
       }
     } else {
       for (var i = 0; i < items.length; i++) {
-        tweens.push(tweenAttr(items[i], n, v));
+        tweenAttr(items[i], n, v);
       }
     }
     return transition;
@@ -367,11 +374,11 @@ function eo_transition(items, data) {
     if (arguments.length < 3) p = null;
     if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
-        tweens.push(tweenStyle(items[i], n, v.call(transition, data[i], i), p));
+        tweenStyle(items[i], n, v.call(transition, data[i], i), p);
       }
     } else {
       for (var i = 0; i < items.length; i++) {
-        tweens.push(tweenStyle(items[i], n, v, p));
+        tweenStyle(items[i], n, v, p);
       }
     }
     return transition;
@@ -380,11 +387,11 @@ function eo_transition(items, data) {
   transition.text = function(v) {
     if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
-        tweens.push(tweenText(items[i], v.call(transition, data[i], i)));
+        tweenText(items[i], v.call(transition, data[i], i));
       }
     } else {
       for (var i = 0; i < items.length; i++) {
-        tweens.push(tweenText(items[i], v));
+        tweenText(items[i], v);
       }
     }
     return transition;
@@ -424,6 +431,8 @@ eo.map = function(data) {
 
   map.apply = function(update) {
     if (!arguments.length) update = map.dispatch;
+
+    // TODO merge selections...
 
     var added = [], addedData = [],
         updated = [], updatedData = [];
