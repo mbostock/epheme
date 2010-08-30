@@ -5,6 +5,9 @@ eo.map = function(data) {
 
   eo.dispatch(map);
 
+  // TODO defensive copy of data?
+  // TODO is it right to expose the length & datum methods?
+
   map.length = function() {
     return data.length;
   };
@@ -36,32 +39,39 @@ eo.map = function(data) {
 
   map.apply = function(update) {
     if (!arguments.length) update = map.dispatch;
-    var froms = eo.select(from); // select before update
 
-    var items = [];
+    var added = [], addedData = [],
+        updated = [], updatedData = [];
     for (var i = 0; i < data.length; i++) {
       var d = data[i],
           s = eo.select(by.call(map, d, i)),
           n = s.length();
       if (n) {
-        update.call(map, {type: "update", target: s, data: d, index: i});
-        for (var j = 0; j < n; j++) items.push(s.item(j));
-      } else {
-        map.dispatch({type: "enter", data: d, index: i});
-      }
-    }
-
-    for (var i = 0; i < froms.length(); i++) {
-      var e = froms.item(i), found = false;
-      for (var j = 0; j < items.length; j++) {
-        if (items[j] === e) {
-          found = true;
-          break;
+        for (var j = 0; j < n; j++) {
+          updated.push(s.item(j));
+          updatedData.push(d);
         }
+      } else {
+        added.push(null);
+        addedData.push(d);
       }
-      if (!found) map.dispatch({type: "exit", target: e});
     }
 
+    var removed = [], existing = eo.select(from);
+    outer: for (var i = 0; i < existing.length(); i++) {
+      var e = existing.item(i), found = false;
+      for (var j = 0; j < added.length; j++) {
+        if (added[j] === e) continue outer;
+      }
+      for (var j = 0; j < updated.length; j++) {
+        if (updated[j] === e) continue outer;
+      }
+      removed.push(e);
+    }
+
+    if (added.length) map.dispatch({type: "enter", target: eo.select(added, addedData)});
+    if (updated.length) map.dispatch({type: "update", target: eo.select(updated, updatedData)});
+    if (removed.length) map.dispatch({type: "exit", target: eo.select(removed)});
     return map;
   };
 

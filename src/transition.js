@@ -36,12 +36,40 @@ function eo_transition(select) {
         v1 = parseFloat(v),
         units = "%"; // TODO!
     if (isNaN(v0) || isNaN(v1)) {
-      return function(t) { // TODO only apply this once at first t >= .5
-        return e.setAttribute(n, t < .5 ? v0 : v1);
+      var t1 = .5;
+      return function(t) {
+        if (t >= t1) {
+          t1 = NaN;
+          eo.select(e).attr(n, v);
+        }
       };
+    };
+    n = ns.qualify(n);
+    if (n.space) return function(t) {
+      e.setAttributeNS(n.space, n.local, v0 * (1 - t) + v1 * t + units);
     };
     return function(t) {
       e.setAttribute(n, v0 * (1 - t) + v1 * t + units);
+    };
+  }
+
+  function tweenStyle(e, n, v, p) {
+    var t1 = .5;
+    return function(t) {
+      if (t >= t1) {
+        t1 = NaN;
+        eo.select(e).style(n, v, p);
+      }
+    };
+  }
+
+  function tweenText(e, v) {
+    var t1 = .5;
+    return function(t) {
+      if (t >= t1) {
+        t1 = NaN;
+        eo.select(e).text(v);
+      }
     };
   }
 
@@ -68,29 +96,44 @@ function eo_transition(select) {
   };
 
   // TODO attribute-aware tweens, such as color
-  // TODO allow values to be specified as a function
-  // TODO evaluate the text function value first
 
   transition.attr = function(n, v) {
-    for (var i = 0; i < select.length(); i++) {
-      tweens.push(tweenAttr(select.item(i), n, v));
+    if (typeof v == "function") {
+      for (var i = 0; i < select.length(); i++) {
+        tweens.push(tweenAttr(select.item(i), n, v.call(select, select.datum(i), i)));
+      }
+    } else {
+      for (var i = 0; i < select.length(); i++) {
+        tweens.push(tweenAttr(select.item(i), n, v));
+      }
     }
     return transition;
   };
 
   transition.style = function(n, v, p) {
-    // TODO
+    if (arguments.length < 3) p = null;
+    if (typeof v == "function") {
+      for (var i = 0; i < select.length(); i++) {
+        tweens.push(tweenStyle(select.item(i), n, v.call(select, select.datum(i), i), p));
+      }
+    } else {
+      for (var i = 0; i < select.length(); i++) {
+        tweens.push(tweenStyle(select.item(i), n, v, p));
+      }
+    }
     return transition;
   };
 
   transition.text = function(v) {
-    var t1 = .5;
-    tweens.push(function(t) {
-      if (t >= t1) {
-        t1 = NaN;
-        select.text(v);
+    if (typeof v == "function") {
+      for (var i = 0; i < select.length(); i++) {
+        tweens.push(tweenText(select.item(i), v.call(select, select.datum(i), i)));
       }
-    });
+    } else {
+      for (var i = 0; i < select.length(); i++) {
+        tweens.push(tweenText(select.item(i), v));
+      }
+    }
     return transition;
   };
 

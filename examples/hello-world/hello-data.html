@@ -21,8 +21,8 @@ var map = eo.map(data)
     .apply();
 
 function enter(e) {
-  var svg = eo.select("id('row')").add("svg:svg")
-      .attr("id", "lucky-" + e.index)
+  var svg = e.target.select("id('row')").add("svg:svg")
+      .attr("id", function(d, i) { return "lucky-" + i; }) // TODO this index is wrong
       .attr("width", 100)
       .attr("height", 100);
 
@@ -36,11 +36,12 @@ function enter(e) {
       .attr("stroke-width", 1.5)
       .style("font", "36pt Comic Sans MS")
       .style("text-shadow", "3px 3px 3px rgba(0,0,0,.4)")
-      .text(e.data);
+      .text(function(d) { return d; });
 }
 
 function update(e) {
-  e.target.select("svg:text").text(e.data);
+  e.target.select("svg:text")
+      .text(function(d) { return d; });
 }
 
 function exit(e) {

@@ -1,11 +1,13 @@
-eo.select = function(e) {
+eo.select = function(e, data) {
   var select = {},
       items;
 
   // TODO optimize implementation for single-element selections?
 
+  if (arguments.length < 2) data = empty;
+
   if (typeof e == "string") {
-    xpath(e, document, items = []);
+    items = xpath(e, document, []);
   } else if (e instanceof Array) {
     items = e.slice();
   } else {
@@ -16,10 +18,19 @@ eo.select = function(e) {
 
   select.select = function(e) {
     var subitems = [];
-    for (var i = 0; i < items.length; i++) {
-      xpath(e, items[i], subitems);
+    if (data === empty) {
+      var subdata = empty;
+      for (var i = 0; i < items.length; i++) {
+        xpath(e, items[i] || document, subitems);
+      }
+    } else {
+      var subdata = [];
+      for (var i = 0, j = 0; i < items.length; i++) {
+        xpath(e, items[i] || document, subitems);
+        for (var d = data[i]; j < subitems.length; j++) subdata.push(d);
+      }
     }
-    return eo.select(subitems);
+    return eo.select(subitems, subdata);
   };
 
   select.add = function(n) {
@@ -34,7 +45,7 @@ eo.select = function(e) {
         children.push(items[i].appendChild(document.createElement(n)));
       }
     }
-    return eo.select(children);
+    return eo.select(children, data);
   };
 
   select.remove = function() {
@@ -45,9 +56,15 @@ eo.select = function(e) {
     return select;
   };
 
+  // TODO select parent / children (convenience functions, using xpath)?
+
   // TODO argument to value function should be a selector? Alternatively, the
   // selector could track the index internally, and thus calling attr("opacity")
   // would return the value of the opacity attribute on the active node.
+
+  // Or perhaps there's a way to specify the context for elements, so that by
+  // default, there's no argument to the value function? And perhaps the map
+  // object can override this context to pass in data?
 
   select.attr = function(n, v) {
     n = ns.qualify(n);
@@ -59,7 +76,7 @@ eo.select = function(e) {
       } else if (typeof v == "function") {
         for (var i = 0; i < items.length; i++) {
           var e = items[i],
-              x = v.call(select, e, i);
+              x = v.call(select, data[i], i);
           x == null
               ? e.removeAttributeNS(n.space, n.local)
               : e.setAttributeNS(n.space, n.local, x);
@@ -76,7 +93,7 @@ eo.select = function(e) {
     } else if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
         var e = items[i],
-            x = v.call(select, e, i);
+            x = v.call(select, data[i], i);
         x == null
             ? e.removeAttribute(n)
             : e.setAttribute(n, x);
@@ -98,7 +115,7 @@ eo.select = function(e) {
     } else if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
         var e = items[i],
-            x = v.call(select, e, i);
+            x = v.call(select, data[i], i);
         x == null
             ? e.style.removeProperty(n)
             : e.style.setProperty(n, x, p);
@@ -122,7 +139,7 @@ eo.select = function(e) {
     } else if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
         var e = items[i],
-            x = v.call(select, e, i);
+            x = v.call(select, data[i], i);
         if (x == null) {
           if (e.firstChild) e.removeChlid(e.firstChild);
         } else {
@@ -148,6 +165,13 @@ eo.select = function(e) {
     return items[i];
   };
 
+  // TODO does it make sense to expose this datum method publicly?
+  // It'd be nice if we could somehow hide it inside the `map` object.
+
+  select.datum = function(i) {
+    return data[i];
+  };
+
   select.transition = function() {
     return eo_transition(select);
   };
@@ -156,11 +180,15 @@ eo.select = function(e) {
 };
 
 function xpath(e, c, items) {
-  var i, x = document.evaluate(
+  var item,
+      results = document.evaluate(
       e, // XPath expression
       c, // context node
       ns.resolve, // namespace resolver
       XPathResult.UNORDERED_NODE_ITERATOR_TYPE, // result type
       null); // result object
-  while ((i = x.iterateNext()) != null) items.push(i);
+  while ((item = results.iterateNext()) != null) items.push(item);
+  return items;
 }
+
+var empty = {};

@@ -60,14 +60,16 @@ eo.dispatch = function(that) {
     }
   };
 };
-eo.select = function(e) {
+eo.select = function(e, data) {
   var select = {},
       items;
 
   // TODO optimize implementation for single-element selections?
 
+  if (arguments.length < 2) data = empty;
+
   if (typeof e == "string") {
-    xpath(e, document, items = []);
+    items = xpath(e, document, []);
   } else if (e instanceof Array) {
     items = e.slice();
   } else {
@@ -78,10 +80,19 @@ eo.select = function(e) {
 
   select.select = function(e) {
     var subitems = [];
-    for (var i = 0; i < items.length; i++) {
-      xpath(e, items[i], subitems);
+    if (data === empty) {
+      var subdata = empty;
+      for (var i = 0; i < items.length; i++) {
+        xpath(e, items[i] || document, subitems);
+      }
+    } else {
+      var subdata = [];
+      for (var i = 0, j = 0; i < items.length; i++) {
+        xpath(e, items[i] || document, subitems);
+        for (var d = data[i]; j < subitems.length; j++) subdata.push(d);
+      }
     }
-    return eo.select(subitems);
+    return eo.select(subitems, subdata);
   };
 
   select.add = function(n) {
@@ -96,7 +107,7 @@ eo.select = function(e) {
         children.push(items[i].appendChild(document.createElement(n)));
       }
     }
-    return eo.select(children);
+    return eo.select(children, data);
   };
 
   select.remove = function() {
@@ -107,9 +118,15 @@ eo.select = function(e) {
     return select;
   };
 
+  // TODO select parent / children (convenience functions, using xpath)?
+
   // TODO argument to value function should be a selector? Alternatively, the
   // selector could track the index internally, and thus calling attr("opacity")
   // would return the value of the opacity attribute on the active node.
+
+  // Or perhaps there's a way to specify the context for elements, so that by
+  // default, there's no argument to the value function? And perhaps the map
+  // object can override this context to pass in data?
 
   select.attr = function(n, v) {
     n = ns.qualify(n);
@@ -121,7 +138,7 @@ eo.select = function(e) {
       } else if (typeof v == "function") {
         for (var i = 0; i < items.length; i++) {
           var e = items[i],
-              x = v.call(select, e, i);
+              x = v.call(select, data[i], i);
           x == null
               ? e.removeAttributeNS(n.space, n.local)
               : e.setAttributeNS(n.space, n.local, x);
@@ -138,7 +155,7 @@ eo.select = function(e) {
     } else if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
         var e = items[i],
-            x = v.call(select, e, i);
+            x = v.call(select, data[i], i);
         x == null
             ? e.removeAttribute(n)
             : e.setAttribute(n, x);
@@ -160,7 +177,7 @@ eo.select = function(e) {
     } else if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
         var e = items[i],
-            x = v.call(select, e, i);
+            x = v.call(select, data[i], i);
         x == null
             ? e.style.removeProperty(n)
             : e.style.setProperty(n, x, p);
@@ -184,7 +201,7 @@ eo.select = function(e) {
     } else if (typeof v == "function") {
       for (var i = 0; i < items.length; i++) {
         var e = items[i],
-            x = v.call(select, e, i);
+            x = v.call(select, data[i], i);
         if (x == null) {
           if (e.firstChild) e.removeChlid(e.firstChild);
         } else {
@@ -210,6 +227,13 @@ eo.select = function(e) {
     return items[i];
   };
 
+  // TODO does it make sense to expose this datum method publicly?
+  // It'd be nice if we could somehow hide it inside the `map` object.
+
+  select.datum = function(i) {
+    return data[i];
+  };
+
   select.transition = function() {
     return eo_transition(select);
   };
@@ -218,14 +242,18 @@ eo.select = function(e) {
 };
 
 function xpath(e, c, items) {
-  var i, x = document.evaluate(
+  var item,
+      results = document.evaluate(
       e, // XPath expression
       c, // context node
       ns.resolve, // namespace resolver
       XPathResult.UNORDERED_NODE_ITERATOR_TYPE, // result type
       null); // result object
-  while ((i = x.iterateNext()) != null) items.push(i);
+  while ((item = results.iterateNext()) != null) items.push(item);
+  return items;
 }
+
+var empty = {};
 function eo_transition(select) {
   var transition = {},
       repeatInterval = 24,
@@ -264,12 +292,40 @@ function eo_transition(select) {
         v1 = parseFloat(v),
         units = "%"; // TODO!
     if (isNaN(v0) || isNaN(v1)) {
-      return function(t) { // TODO only apply this once at first t >= .5
-        return e.setAttribute(n, t < .5 ? v0 : v1);
+      var t1 = .5;
+      return function(t) {
+        if (t >= t1) {
+          t1 = NaN;
+          eo.select(e).attr(n, v);
+        }
       };
+    };
+    n = ns.qualify(n);
+    if (n.space) return function(t) {
+      e.setAttributeNS(n.space, n.local, v0 * (1 - t) + v1 * t + units);
     };
     return function(t) {
       e.setAttribute(n, v0 * (1 - t) + v1 * t + units);
+    };
+  }
+
+  function tweenStyle(e, n, v, p) {
+    var t1 = .5;
+    return function(t) {
+      if (t >= t1) {
+        t1 = NaN;
+        eo.select(e).style(n, v, p);
+      }
+    };
+  }
+
+  function tweenText(e, v) {
+    var t1 = .5;
+    return function(t) {
+      if (t >= t1) {
+        t1 = NaN;
+        eo.select(e).text(v);
+      }
     };
   }
 
@@ -296,29 +352,44 @@ function eo_transition(select) {
   };
 
   // TODO attribute-aware tweens, such as color
-  // TODO allow values to be specified as a function
-  // TODO evaluate the text function value first
 
   transition.attr = function(n, v) {
-    for (var i = 0; i < select.length(); i++) {
-      tweens.push(tweenAttr(select.item(i), n, v));
+    if (typeof v == "function") {
+      for (var i = 0; i < select.length(); i++) {
+        tweens.push(tweenAttr(select.item(i), n, v.call(select, select.datum(i), i)));
+      }
+    } else {
+      for (var i = 0; i < select.length(); i++) {
+        tweens.push(tweenAttr(select.item(i), n, v));
+      }
     }
     return transition;
   };
 
   transition.style = function(n, v, p) {
-    // TODO
+    if (arguments.length < 3) p = null;
+    if (typeof v == "function") {
+      for (var i = 0; i < select.length(); i++) {
+        tweens.push(tweenStyle(select.item(i), n, v.call(select, select.datum(i), i), p));
+      }
+    } else {
+      for (var i = 0; i < select.length(); i++) {
+        tweens.push(tweenStyle(select.item(i), n, v, p));
+      }
+    }
     return transition;
   };
 
   transition.text = function(v) {
-    var t1 = .5;
-    tweens.push(function(t) {
-      if (t >= t1) {
-        t1 = NaN;
-        select.text(v);
+    if (typeof v == "function") {
+      for (var i = 0; i < select.length(); i++) {
+        tweens.push(tweenText(select.item(i), v.call(select, select.datum(i), i)));
       }
-    });
+    } else {
+      for (var i = 0; i < select.length(); i++) {
+        tweens.push(tweenText(select.item(i), v));
+      }
+    }
     return transition;
   };
 
@@ -330,6 +401,9 @@ eo.map = function(data) {
       by;
 
   eo.dispatch(map);
+
+  // TODO defensive copy of data?
+  // TODO is it right to expose the length & datum methods?
 
   map.length = function() {
     return data.length;
@@ -362,32 +436,39 @@ eo.map = function(data) {
 
   map.apply = function(update) {
     if (!arguments.length) update = map.dispatch;
-    var froms = eo.select(from); // select before update
 
-    var items = [];
+    var added = [], addedData = [],
+        updated = [], updatedData = [];
     for (var i = 0; i < data.length; i++) {
       var d = data[i],
           s = eo.select(by.call(map, d, i)),
           n = s.length();
       if (n) {
-        update.call(map, {type: "update", target: s, data: d, index: i});
-        for (var j = 0; j < n; j++) items.push(s.item(j));
-      } else {
-        map.dispatch({type: "enter", data: d, index: i});
-      }
-    }
-
-    for (var i = 0; i < froms.length(); i++) {
-      var e = froms.item(i), found = false;
-      for (var j = 0; j < items.length; j++) {
-        if (items[j] === e) {
-          found = true;
-          break;
+        for (var j = 0; j < n; j++) {
+          updated.push(s.item(j));
+          updatedData.push(d);
         }
+      } else {
+        added.push(null);
+        addedData.push(d);
       }
-      if (!found) map.dispatch({type: "exit", target: e});
     }
 
+    var removed = [], existing = eo.select(from);
+    outer: for (var i = 0; i < existing.length(); i++) {
+      var e = existing.item(i), found = false;
+      for (var j = 0; j < added.length; j++) {
+        if (added[j] === e) continue outer;
+      }
+      for (var j = 0; j < updated.length; j++) {
+        if (updated[j] === e) continue outer;
+      }
+      removed.push(e);
+    }
+
+    if (added.length) map.dispatch({type: "enter", target: eo.select(added, addedData)});
+    if (updated.length) map.dispatch({type: "update", target: eo.select(updated, updatedData)});
+    if (removed.length) map.dispatch({type: "exit", target: eo.select(removed)});
     return map;
   };
 
