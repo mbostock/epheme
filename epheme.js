@@ -277,7 +277,6 @@ function eo_transform_add() {
       results = this.results;
   results.length = 0;
   results.data = nodes.data;
-  results.parents = nodes;
   if (n.space) {
     for (var i = 0; i < m; ++i) {
       results.push(nodes[i].appendChild(document.createElementNS(n.space, n.local)));
@@ -347,8 +346,34 @@ function eo_transform_select() {
       r = null,
       o;
   results.length = 0;
-  results.parents = nodes;
   if (data) {
+
+    //
+    // TODO
+    //
+    // The interaction of flattening sub-selectors with data and indices is a
+    // bit confusing. I don't think I want to lose the nice recursive structure
+    // of Protovis panels, though in other ways I really like that the
+    // properties are evaluated sequentially (breadth-first) rather than
+    // recursively (depth-first). Perhaps there's something in-between.
+    //
+    // If we did want to implement nested recursion, one way to do that would be
+    // for each "select" to be a nested action. I.e., all actions that are tied
+    // to a particular select are invoked (repeatedly) for the results of the
+    // select, rather than flattened into the top-level transform. This might be
+    // a good idea.
+    //
+    // We probably need a stack of parent indices. That is, zero or more parent
+    // indices, and the current index. This way, the first argument to the
+    // property functions is the local index, and additional arguments are
+    // parent indices.
+    //
+    // Well, perhaps instead of indices we have data. Then it would be more like
+    // Protovis, in a good way. Though I did really like the idea of passing in
+    // the index to the property function rather than making a `this.index`
+    // stateful, because tracking that state was really annoying.
+    //
+
     results.data = [];
     for (var i = 0; i < m; ++i) {
       r = e.evaluate(nodes[i], XPathResult.UNORDERED_NODE_ITERATOR_TYPE, r);
@@ -367,7 +392,7 @@ function eo_transform_select() {
 
 function eo_transform_data() {
   var nodes = this.nodes,
-      data = nodes.parents.data || empty,
+      data = nodes.data || empty,
       results = nodes.data = [],
       m = nodes.length,
       v = this.value;

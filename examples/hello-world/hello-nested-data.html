@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <title>Hello, data!</title>
+    <script type="text/javascript" src="../../epheme.js"></script>
+  </head>
+  <body>
+    Your lucky numbers are:<br>
+    <table>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    </table>
+    <script type="text/javascript">
+
+var eo = org.epheme;
+
+var data = [];
+for (var i = 0; i < 10; i++) {
+  for (var j = 0, a = []; j < 10; j++) {
+    a.push([i, j]);
+  }
+  data.push(a);
+}
+
+eo.transform()
+  .select("//tr")
+    .data(data)
+  .select("td")
+    .data(function(d, i) { return d[i % d.length]; })
+    .text(function(d) { return d; })
+  .apply();
+
+    </script>
+  </body>
+</html>
