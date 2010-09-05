@@ -14,9 +14,10 @@
 
 var eo = org.epheme;
 
-var t = eo.transform("//span");
+var t = eo.transform();
 
-var svg = t.add("svg:svg")
+var svg = t.select("//span")
+  .add("svg:svg")
     .attr("width", 100)
     .attr("height", 100);
 

@@ -1,19 +1,21 @@
 eo.transform = function(e) {
-  var transform = eo.dispatch({}),
+  var transform = {},
       actions = [];
 
-  e = document.createExpression(e, ns.resolve),
+  // TODO features:
+  // transition duration, delay, etc.
+  // data binding
 
-  // TODO transition duration, delay, etc.
-  // TODO data binding
-  // TODO optimize arguments to action implementation?
-  // TODO use sizzle selectors rather than xpath?
-  // TODO how to insert or replace elements?
-  // TODO how to move elements around, sort, reverse or reorder?
-  // TODO add returns select(added elements)?
-  // TODO remove returns select(removed elements)?
-  // TODO text is more efficient by reusing existing firstChild.nodeValue?
-  // TODO sub-select
+  // TODO api uncertainty:
+  // can transitions be scoped, or global to the transform?
+  // remove returns select(removed elements)?
+  // use sizzle selectors rather than xpath?
+  // how to insert or replace elements?
+  // how to move elements around, sort, reverse or reorder?
+
+  // TODO performance:
+  // text would be more efficient by reusing existing firstChild?
+  // optimize arguments to action implementation?
 
   // Somewhat confusing: the node name specified to the add and remove methods
   // is not the same as the XPath selector expressions. For example, "#text" is
@@ -21,73 +23,90 @@ eo.transform = function(e) {
   // However, to select text nodes in XPath, text() is used instead. CSS
   // selectors have the same problem, as #text refers to the ID "text".
 
-  transform.attr = function(n, v) {
-    actions.push({
-      impl: eo_attr,
-      name: n,
-      value: v
-    });
-    return transform;
-  };
+  function transform_scope(nodes) {
+    var scope = Object.create(transform);
 
-  transform.style = function(n, v, p) {
-    actions.push({
-      impl: eo_style,
-      name: n,
-      value: v,
-      priority: arguments.length < 3 ? null : p
-    });
-    return transform;
-  };
+    scope.attr = function(n, v) {
+      actions.push({
+        impl: eo_transform_attr,
+        nodes: nodes,
+        name: n,
+        value: v
+      });
+      return scope;
+    };
 
-  transform.add = function(n, v) {
-    actions.push({
-      impl: eo_add,
-      name: n,
-      value: v
-    });
-    return transform;
-  };
+    scope.style = function(n, v, p) {
+      actions.push({
+        impl: eo_transform_style,
+        nodes: nodes,
+        name: n,
+        value: v,
+        priority: arguments.length < 3 ? null : p
+      });
+      return scope;
+    };
 
-  transform.remove = function(e) {
-    actions.push({
-      impl: eo_remove,
-      expression: document.createExpression(e, ns.resolve)
-    });
-    return transform;
-  };
+    scope.add = function(n, v) {
+      var action = {
+        impl: eo_transform_add,
+        nodes: nodes,
+        results: [],
+        name: n,
+        value: v
+      };
+      actions.push(action);
+      return transform_scope(action.results);
+    };
 
-  transform.value = function(v) {
-    actions.push({
-      impl: eo_value,
-      value: v
-    });
-    return transform;
-  };
+    scope.remove = function(e) {
+      actions.push({
+        impl: eo_transform_remove,
+        nodes: nodes,
+        expression: document.createExpression(e, ns.resolve)
+      });
+      return scope;
+    };
 
-  transform.text = function(v) {
-    transform.remove("text()").add("#text", v);
-    return transform;
-  };
+    scope.value = function(v) {
+      actions.push({
+        impl: eo_transform_value,
+        nodes: nodes,
+        value: v
+      });
+      return scope;
+    };
 
-  transform.select = function(e) {
-    return transform;
-  };
+    scope.text = function(v) {
+      scope.remove("text()").add("#text", v);
+      return scope; // don't scope
+    };
+
+    scope.select = function(e) {
+      var action = {
+        impl: eo_transform_select,
+        nodes: nodes,
+        results: [],
+        expression: document.createExpression(e, ns.resolve)
+      };
+      actions.push(action);
+      return transform_scope(action.results);
+    };
+
+    return scope;
+  }
 
   transform.apply = function() {
-    var nodes = [],
-        r = e.evaluate(document, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null),
-        o;
-    while ((o = r.iterateNext()) != null) nodes.push(o);
-    for (var i = 0, n = actions.length; i < n; ++i) actions[i].impl(nodes);
+    for (var i = 0, n = actions.length; i < n; ++i) actions[i].impl();
     return transform;
   };
 
-  return transform;
+  return transform_scope([document]);
 };
 
-function eo_attr(nodes) {
-  var m = nodes.length,
+function eo_transform_attr() {
+  var nodes = this.nodes,
+      m = nodes.length,
       n = ns.qualify(this.name),
       v = this.value,
       f = typeof v == "function" && v;
@@ -128,8 +147,9 @@ function eo_attr(nodes) {
   }
 }
 
-function eo_style(nodes) {
-  var m = nodes.length,
+function eo_transform_style() {
+  var nodes = this.nodes,
+      m = nodes.length,
       n = ns.qualify(this.name),
       v = this.value,
       f = typeof v == "function" && v,
@@ -153,13 +173,15 @@ function eo_style(nodes) {
   }
 }
 
-function eo_add(nodes) {
-  var m = nodes.length,
+function eo_transform_add() {
+  var nodes = this.nodes,
+      m = nodes.length,
       n = ns.qualify(this.name),
-      children = [];
+      results = this.results;
+  results.length = 0;
   if (n.space) {
     for (var i = 0; i < m; ++i) {
-      children.push(nodes[i].appendChild(document.createElementNS(n.space, n.local)));
+      results.push(nodes[i].appendChild(document.createElementNS(n.space, n.local)));
     }
   } else if (n == "#text") {
     var v = this.value,
@@ -168,23 +190,23 @@ function eo_add(nodes) {
       for (var i = 0; i < m; ++i) {
         var o = nodes[i],
             x = v.call(o);
-        children.push(o.appendChild(document.createTextNode(x)));
+        results.push(o.appendChild(document.createTextNode(x)));
       }
     } else {
       for (var i = 0; i < m; ++i) {
-        children.push(nodes[i].appendChild(document.createTextNode(v)));
+        results.push(nodes[i].appendChild(document.createTextNode(v)));
       }
     }
   } else {
     for (var i = 0; i < m; ++i) {
-      children.push(nodes[i].appendChild(document.createElement(n)));
+      results.push(nodes[i].appendChild(document.createElement(n)));
     }
   }
-  return children;
 }
 
-function eo_remove(nodes) {
-  var m = nodes.length,
+function eo_transform_remove() {
+  var nodes = this.nodes,
+      m = nodes.length,
       e = this.expression,
       r = null,
       o;
@@ -197,8 +219,9 @@ function eo_remove(nodes) {
   }
 }
 
-function eo_value(nodes) {
-  var m = nodes.length,
+function eo_transform_value() {
+  var nodes = this.nodes,
+      m = nodes.length,
       v = this.value,
       f = typeof v == "function" && v;
   if (f) {
@@ -211,5 +234,19 @@ function eo_value(nodes) {
     for (var i = 0; i < m; ++i) {
       nodes[i].nodeValue = v;
     }
+  }
+}
+
+function eo_transform_select() {
+  var nodes = this.nodes,
+      results = this.results,
+      m = nodes.length,
+      e = this.expression,
+      r = null,
+      o;
+  results.length = 0;
+  for (var i = 0; i < m; ++i) {
+    r = e.evaluate(nodes[i], XPathResult.UNORDERED_NODE_ITERATOR_TYPE, r);
+    while ((o = r.iterateNext()) != null) results.push(o);
   }
 }
