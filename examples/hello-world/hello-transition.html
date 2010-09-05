@@ -24,9 +24,9 @@ var n = data.length,
     h = 60;
 
 eo.select("//body").add("svg:svg")
-    .style("padding-left", "10%")
-    .style("padding-right", "10%")
-    .attr("width", "80%")
+    .style("padding-left", "5%")
+    .style("padding-right", "5%")
+    .attr("width", "90%")
     .attr("height", h * n);
 
 var map = eo.map(data)
@@ -40,10 +40,10 @@ var map = eo.map(data)
 function enter(e) {
   var g = e.target.select("//svg:svg").add("svg:g")
       .attr("id", function(d) { return "lucky-" + d.id; })
-      .attr("transform", function(d) { return "translate(0," + (d.index + 1) * h + ")"; });
+      .attr("transform", function(d) { return "translate(0," + d.index * h + ")"; });
 
   g.add("svg:text")
-      .attr("x", function(d) { return d.value + "%"; })
+      .attr("x", "-15%")
       .attr("y", h / 2)
       .attr("dy", ".35em")
       .attr("text-anchor", "middle")
@@ -55,7 +55,8 @@ function enter(e) {
   g.transition()
       .duration(1000)
       .ease("elastic")
-      .attr("transform", function(d) { return "translate(0," + d.index * h + ")"; });
+    .select("svg:text")
+      .attr("x", function(d) { return d.value + "%"; });
 }
 
 function update(e) {
@@ -69,8 +70,9 @@ function exit(e) {
   e.target.transition()
       .duration(1000)
       .ease("elastic")
-      .attr("transform", function(d) { return "translate(0," + -h + ")"; })
-      .on("end", function() { e.target.remove(); });
+      .on("end", function() { e.target.remove(); })
+    .select("svg:text")
+      .attr("x", "115%");
 }
 
 function refresh() {

@@ -154,4 +154,4 @@ function eo_transitioner() {
   return transitioner;
 }
 
-var digits = /([0-9.]+)/;
+var digits = /([-0-9.]+)/;

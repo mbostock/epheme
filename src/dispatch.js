@@ -32,4 +32,6 @@ eo.dispatch = function(that) {
       if (l.on) l.handler.call(that, event);
     }
   };
+
+  return that;
 };

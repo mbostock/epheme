@@ -6,6 +6,7 @@ SRC_FILES = \
 	src/start.js \
 	src/ns.js \
 	src/dispatch.js \
+	src/transform.js \
 	src/select.js \
 	src/transition.js \
 	src/map.js \
