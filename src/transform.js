@@ -179,7 +179,7 @@ function eo_transform_style(nodes, data) {
     for (var i = 0; i < m; ++i) {
       eo_transform_stack[0] = data[i];
       var o = nodes[i],
-          x = v.call(null, eo_transform_stack);
+          x = v.apply(null, eo_transform_stack);
       x == null
           ? o.style.removeProperty(n)
           : o.style.setProperty(n, x, p);

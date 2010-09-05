@@ -2,6 +2,28 @@
   <head>
     <title>Hello, data!</title>
     <script type="text/javascript" src="../../epheme.js"></script>
+    <style type="text/css">
+
+body, td {
+  font: 14px Helvetica Neue;
+  text-rendering: optimizeLegibility;
+  margin: 1em;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin-top: .5em;
+}
+
+td {
+  border: solid 1px #ccc;
+  padding: 4px;
+  color: #ccc;
+  text-align: center;
+}
+
+    </style>
   </head>
   <body>
     Your lucky numbers are:<br>
@@ -22,24 +44,31 @@
 var eo = org.epheme;
 
 var data = [];
+
 for (var i = 0; i < 10; i++) {
   for (var j = 0, a = []; j < 10; j++) {
-    a.push([i, j]);
+    a.push(~~(Math.random() * 100));
   }
   data.push(a);
 }
 
-eo.transform()
-  .select("//table")
-    .style("border-collapse", "collapse")
-    .style("border-spacing", "0")
-  .select("tbody/tr")
+var t = eo.transform()
+  .select("//tr")
     .data(data)
   .select("td")
-    .style("border", "solid 1px #ccc")
-    .style("padding", "4px")
+    .style("background-color", function(d) { return "hsl(0,50%," + d + "%)"; })
     .text(function(d) { return d; })
   .apply();
+
+function refresh() {
+  for (var i = 0; i < data.length; i++) {
+    var z = data[i], d = z.shift();
+    z.push(~~(Math.random() * 100));
+  }
+  t.apply();
+}
+
+setInterval(refresh, 250);
 
     </script>
   </body>
