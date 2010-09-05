@@ -71,8 +71,12 @@ eo.transform = function() {
   // per-element delay would be great
   // are transitions scoped, or global?
 
-  // TODO data:
-  // is the "full data stack" available as additional arguments?
+  // TODO data and indexes:
+  //
+  // Is the current index available in the callback?  Perhaps the `this` context
+  // is a single-element wrapper, with similar behavior to NNS and eo.select?
+  // It's a bit weird that data is a scoping action, as opposed to setting the
+  // data on the current scope, but I sort of like it.
 
   // TODO api uncertainty:
   // remove returns select(removed elements)?
@@ -84,47 +88,28 @@ eo.transform = function() {
   // text would be more efficient by reusing existing firstChild?
   // optimize arguments to action implementation?
 
-  // Somewhat confusing: these two statements are equivalent:
-  //
-  //   .data(array)
-  //   .data(function(d, i) { return array[i]; })
-  //
-  // In other words, the array is implicitly dereferenced, similar to Protovis,
-  // However, unlike protovis the data property is evaluated per instance,
-  // passing in the parent data and the current index. This is largely because
-  // the selectors are flattened--the properties are not evaluated with nested
-  // recursion as with Protovis, but sequentially.
-  //
-  // Another side-effect of this design is that the default data property is the
-  // identity function, rather than [d]. I'm not sure how this will work with
-  // nested data structures. Something to try next!
-
   // Somewhat confusing: the node name specified to the add and remove methods
   // is not the same as the XPath selector expressions. For example, "#text" is
   // used to create a text node, as this corresponds to the W3C nodeName.
   // However, to select text nodes in XPath, text() is used instead. CSS
   // selectors have the same problem, as #text refers to the ID "text".
 
-  function transform_scope(nodes) {
+  function transform_scope(actions) {
     var scope = Object.create(transform);
 
     scope.data = function(v) {
-      if (typeof v == "function") {
-        actions.push({
-          impl: eo_transform_data,
-          nodes: nodes,
-          value: v
-        });
-      } else {
-        nodes.data = v;
+      var action = {
+        impl: eo_transform_data,
+        value: v,
+        actions: []
       }
-      return scope;
+      actions.push(action);
+      return transform_scope(action.actions);
     };
 
     scope.attr = function(n, v) {
       actions.push({
         impl: eo_transform_attr,
-        nodes: nodes,
         name: n,
         value: v
       });
@@ -134,7 +119,6 @@ eo.transform = function() {
     scope.style = function(n, v, p) {
       actions.push({
         impl: eo_transform_style,
-        nodes: nodes,
         name: n,
         value: v,
         priority: arguments.length < 3 ? null : p
@@ -143,21 +127,19 @@ eo.transform = function() {
     };
 
     scope.add = function(n, v) {
-      var results = [];
-      actions.push({
+      var action = {
         impl: eo_transform_add,
-        nodes: nodes,
-        results: results,
         name: n,
-        value: v
-      });
-      return transform_scope(results);
+        value: v,
+        actions: []
+      };
+      actions.push(action);
+      return transform_scope(action.actions);
     };
 
     scope.remove = function(e) {
       actions.push({
         impl: eo_transform_remove,
-        nodes: nodes,
         expression: document.createExpression(e, ns.resolve)
       });
       return scope;
@@ -166,7 +148,6 @@ eo.transform = function() {
     scope.value = function(v) {
       actions.push({
         impl: eo_transform_value,
-        nodes: nodes,
         value: v
       });
       return scope;
@@ -178,31 +159,34 @@ eo.transform = function() {
     };
 
     scope.select = function(e) {
-      var results = [];
-      actions.push({
+      var action = {
         impl: eo_transform_select,
-        nodes: nodes,
-        results: results,
-        expression: document.createExpression(e, ns.resolve)
-      });
-      return transform_scope(results);
+        expression: document.createExpression(e, ns.resolve),
+        actions: []
+      };
+      actions.push(action);
+      return transform_scope(action.actions);
     };
 
     return scope;
   }
 
   transform.apply = function() {
-    for (var i = 0, n = actions.length; i < n; ++i) actions[i].impl();
+    eo_transform_stack.unshift(null);
+    eo_transform_actions(actions, [document], empty);
+    eo_transform_stack.shift();
     return transform;
   };
 
-  return transform_scope([document]);
+  return transform_scope(actions);
 };
 
-function eo_transform_attr() {
-  var nodes = this.nodes,
-      data = nodes.data || empty,
-      m = nodes.length,
+function eo_transform_actions(actions, nodes, data) {
+  for (var i = 0, n = actions.length; i < n; ++i) actions[i].impl(nodes, data);
+}
+
+function eo_transform_attr(nodes, data) {
+  var m = nodes.length,
       n = ns.qualify(this.name),
       v = this.value,
       f = typeof v == "function" && v;
@@ -213,8 +197,9 @@ function eo_transform_attr() {
       }
     } else if (f) {
       for (var i = 0; i < m; ++i) {
+        eo_transform_stack[0] = data[i];
         var o = nodes[i],
-            x = v.call(o, data[i], i);
+            x = v.apply(null, eo_transform_stack);
         x == null
             ? o.removeAttributeNS(n.space, n.local)
             : o.setAttributeNS(n.space, n.local, x);
@@ -230,8 +215,9 @@ function eo_transform_attr() {
     }
   } else if (f) {
     for (var i = 0; i < m; ++i) {
+      eo_transform_stack[0] = data[i];
       var o = nodes[i],
-          x = v.call(o, data[i], i);
+          x = v.apply(null, eo_transform_stack);
       x == null
           ? o.removeAttribute(n)
           : o.setAttribute(n, x);
@@ -243,10 +229,8 @@ function eo_transform_attr() {
   }
 }
 
-function eo_transform_style() {
-  var nodes = this.nodes,
-      data = nodes.data || empty,
-      m = nodes.length,
+function eo_transform_style(nodes, data) {
+  var m = nodes.length,
       n = ns.qualify(this.name),
       v = this.value,
       f = typeof v == "function" && v,
@@ -257,8 +241,9 @@ function eo_transform_style() {
     }
   } else if (f) {
     for (var i = 0; i < m; ++i) {
+      eo_transform_stack[0] = data[i];
       var o = nodes[i],
-          x = v.call(o, data[i], i);
+          x = v.call(null, eo_transform_stack);
       x == null
           ? o.style.removeProperty(n)
           : o.style.setProperty(n, x, p);
@@ -270,42 +255,39 @@ function eo_transform_style() {
   }
 }
 
-function eo_transform_add() {
-  var nodes = this.nodes,
-      m = nodes.length,
+function eo_transform_add(nodes, data) {
+  var m = nodes.length,
       n = ns.qualify(this.name),
-      results = this.results;
-  results.length = 0;
-  results.data = nodes.data;
+      children = [];
   if (n.space) {
     for (var i = 0; i < m; ++i) {
-      results.push(nodes[i].appendChild(document.createElementNS(n.space, n.local)));
+      children.push(nodes[i].appendChild(document.createElementNS(n.space, n.local)));
     }
   } else if (n == "#text") {
     var v = this.value,
         f = typeof v == "function" && v;
     if (f) {
-      var data = nodes.data || empty;
       for (var i = 0; i < m; ++i) {
+        eo_transform_stack[0] = data[i];
         var o = nodes[i],
-            x = v.call(o, data[i], i);
-        results.push(o.appendChild(document.createTextNode(x)));
+            x = v.apply(null, eo_transform_stack);
+        children.push(o.appendChild(document.createTextNode(x)));
       }
     } else {
       for (var i = 0; i < m; ++i) {
-        results.push(nodes[i].appendChild(document.createTextNode(v)));
+        children.push(nodes[i].appendChild(document.createTextNode(v)));
       }
     }
   } else {
     for (var i = 0; i < m; ++i) {
-      results.push(nodes[i].appendChild(document.createElement(n)));
+      children.push(nodes[i].appendChild(document.createElement(n)));
     }
   }
+  eo_transform_actions(this.actions, children, data);
 }
 
-function eo_transform_remove() {
-  var nodes = this.nodes,
-      m = nodes.length,
+function eo_transform_remove(nodes, data) {
+  var m = nodes.length,
       e = this.expression,
       r = null,
       o;
@@ -318,16 +300,15 @@ function eo_transform_remove() {
   }
 }
 
-function eo_transform_value() {
-  var nodes = this.nodes,
-      data = nodes.data || empty,
-      m = nodes.length,
+function eo_transform_value(nodes, data) {
+  var m = nodes.length,
       v = this.value,
       f = typeof v == "function" && v;
   if (f) {
     for (var i = 0; i < m; ++i) {
+      eo_transform_stack[0] = data[i];
       var o = nodes[i],
-          x = v.call(o, data[i], i);
+          x = v.apply(null, eo_transform_stack);
       o.nodeValue = x;
     }
   } else {
@@ -337,68 +318,38 @@ function eo_transform_value() {
   }
 }
 
-function eo_transform_select() {
-  var nodes = this.nodes,
-      data = nodes.data,
-      results = this.results,
+function eo_transform_select(nodes, data) {
+  var results = [],
       m = nodes.length,
       e = this.expression,
       r = null,
+      d,
       o;
-  results.length = 0;
-  if (data) {
-
-    //
-    // TODO
-    //
-    // The interaction of flattening sub-selectors with data and indices is a
-    // bit confusing. I don't think I want to lose the nice recursive structure
-    // of Protovis panels, though in other ways I really like that the
-    // properties are evaluated sequentially (breadth-first) rather than
-    // recursively (depth-first). Perhaps there's something in-between.
-    //
-    // If we did want to implement nested recursion, one way to do that would be
-    // for each "select" to be a nested action. I.e., all actions that are tied
-    // to a particular select are invoked (repeatedly) for the results of the
-    // select, rather than flattened into the top-level transform. This might be
-    // a good idea.
-    //
-    // We probably need a stack of parent indices. That is, zero or more parent
-    // indices, and the current index. This way, the first argument to the
-    // property functions is the local index, and additional arguments are
-    // parent indices.
-    //
-    // Well, perhaps instead of indices we have data. Then it would be more like
-    // Protovis, in a good way. Though I did really like the idea of passing in
-    // the index to the property function rather than making a `this.index`
-    // stateful, because tracking that state was really annoying.
-    //
-
-    results.data = [];
-    for (var i = 0; i < m; ++i) {
-      r = e.evaluate(nodes[i], XPathResult.UNORDERED_NODE_ITERATOR_TYPE, r);
-      while ((o = r.iterateNext()) != null) {
-        results.push(o);
-        results.data.push(data[i]);
-      }
-    }
-  } else {
-    for (var i = 0; i < m; ++i) {
-      r = e.evaluate(nodes[i], XPathResult.UNORDERED_NODE_ITERATOR_TYPE, r);
-      while ((o = r.iterateNext()) != null) results.push(o);
-    }
+  eo_transform_stack.unshift(null);
+  for (var i = 0; i < m; ++i) {
+    r = e.evaluate(nodes[i], XPathResult.UNORDERED_NODE_ITERATOR_TYPE, r);
+    while ((o = r.iterateNext()) != null) results.push(o);
+    eo_transform_stack[1] = d = data[i];
+    eo_transform_actions(this.actions, results, d == null ? empty : d);
+    results.length = 0;
   }
+  eo_transform_stack.shift();
 }
 
-function eo_transform_data() {
-  var nodes = this.nodes,
-      data = nodes.data || empty,
-      results = nodes.data = [],
+var eo_transform_stack = [];
+
+function eo_transform_data(nodes, data) {
+  var results = this.value,
       m = nodes.length,
-      v = this.value;
-  for (var i = 0; i < m; ++i) {
-    results.push(v.call(nodes[i], data[i], i));
+      v = results;
+  if (typeof v == "function") {
+    results = [];
+    for (var i = 0; i < m; ++i) {
+      eo_transform_stack[0] = data[i];
+      results.push(v.apply(null, eo_transform_stack));
+    }
   }
+  eo_transform_actions(this.actions, nodes, results);
 }
 
 var empty = {};
