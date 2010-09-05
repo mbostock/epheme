@@ -14,14 +14,12 @@
 
 var eo = org.epheme;
 
-var t = eo.transform();
-
-var svg = t.select("//span")
+eo.transform()
+  .select("//span")
   .add("svg:svg")
     .attr("width", 100)
-    .attr("height", 100);
-
-var text = svg.add("svg:text")
+    .attr("height", 100)
+  .add("svg:text")
     .attr("x", "50%")
     .attr("y", "50%")
     .attr("dy", ".35em")
@@ -31,9 +29,8 @@ var text = svg.add("svg:text")
     .attr("stroke-width", 1.5)
     .style("font", "36pt Comic Sans MS")
     .style("text-shadow", "3px 3px 3px rgba(0,0,0,.4)")
-    .text(function() { return ~~(Math.random() * 100); });
-
-t.apply();
+    .text(function() { return ~~(Math.random() * 100); })
+  .apply();
 
 setInterval(eo.transform()
     .select("//svg:text")

@@ -62,20 +62,42 @@ eo.dispatch = function(that) {
 
   return that;
 };
-eo.transform = function(e) {
+eo.transform = function() {
   var transform = {},
       actions = [];
 
-  // TODO transition duration, delay, etc.
-  // TODO data binding
-  // TODO optimize arguments to action implementation?
-  // TODO use sizzle selectors rather than xpath?
-  // TODO how to insert or replace elements?
-  // TODO how to move elements around, sort, reverse or reorder?
-  // TODO add returns select(added elements)?
-  // TODO remove returns select(removed elements)?
-  // TODO text is more efficient by reusing existing firstChild.nodeValue?
-  // TODO sub-select
+  // TODO transitions:
+  // duration, delay, etc.
+  // per-element delay would be great
+  // are transitions scoped, or global?
+
+  // TODO data:
+  // is the "full data stack" available as additional arguments?
+
+  // TODO api uncertainty:
+  // remove returns select(removed elements)?
+  // use sizzle selectors rather than xpath?
+  // how to insert or replace elements?
+  // how to move elements around, sort, reverse or reorder?
+
+  // TODO performance:
+  // text would be more efficient by reusing existing firstChild?
+  // optimize arguments to action implementation?
+
+  // Somewhat confusing: these two statements are equivalent:
+  //
+  //   .data(array)
+  //   .data(function(d, i) { return array[i]; })
+  //
+  // In other words, the array is implicitly dereferenced, similar to Protovis,
+  // However, unlike protovis the data property is evaluated per instance,
+  // passing in the parent data and the current index. This is largely because
+  // the selectors are flattened--the properties are not evaluated with nested
+  // recursion as with Protovis, but sequentially.
+  //
+  // Another side-effect of this design is that the default data property is the
+  // identity function, rather than [d]. I'm not sure how this will work with
+  // nested data structures. Something to try next!
 
   // Somewhat confusing: the node name specified to the add and remove methods
   // is not the same as the XPath selector expressions. For example, "#text" is
@@ -85,6 +107,19 @@ eo.transform = function(e) {
 
   function transform_scope(nodes) {
     var scope = Object.create(transform);
+
+    scope.data = function(v) {
+      if (typeof v == "function") {
+        actions.push({
+          impl: eo_transform_data,
+          nodes: nodes,
+          value: v
+        });
+      } else {
+        nodes.data = v;
+      }
+      return scope;
+    };
 
     scope.attr = function(n, v) {
       actions.push({
@@ -108,15 +143,15 @@ eo.transform = function(e) {
     };
 
     scope.add = function(n, v) {
-      var action = {
+      var results = [];
+      actions.push({
         impl: eo_transform_add,
         nodes: nodes,
-        results: [],
+        results: results,
         name: n,
         value: v
-      };
-      actions.push(action);
-      return transform_scope(action.results);
+      });
+      return transform_scope(results);
     };
 
     scope.remove = function(e) {
@@ -143,14 +178,14 @@ eo.transform = function(e) {
     };
 
     scope.select = function(e) {
-      var action = {
+      var results = [];
+      actions.push({
         impl: eo_transform_select,
         nodes: nodes,
-        results: [],
+        results: results,
         expression: document.createExpression(e, ns.resolve)
-      };
-      actions.push(action);
-      return transform_scope(action.results);
+      });
+      return transform_scope(results);
     };
 
     return scope;
@@ -166,6 +201,7 @@ eo.transform = function(e) {
 
 function eo_transform_attr() {
   var nodes = this.nodes,
+      data = nodes.data || empty,
       m = nodes.length,
       n = ns.qualify(this.name),
       v = this.value,
@@ -178,7 +214,7 @@ function eo_transform_attr() {
     } else if (f) {
       for (var i = 0; i < m; ++i) {
         var o = nodes[i],
-            x = v.call(o);
+            x = v.call(o, data[i], i);
         x == null
             ? o.removeAttributeNS(n.space, n.local)
             : o.setAttributeNS(n.space, n.local, x);
@@ -195,7 +231,7 @@ function eo_transform_attr() {
   } else if (f) {
     for (var i = 0; i < m; ++i) {
       var o = nodes[i],
-          x = v.call(o);
+          x = v.call(o, data[i], i);
       x == null
           ? o.removeAttribute(n)
           : o.setAttribute(n, x);
@@ -209,6 +245,7 @@ function eo_transform_attr() {
 
 function eo_transform_style() {
   var nodes = this.nodes,
+      data = nodes.data || empty,
       m = nodes.length,
       n = ns.qualify(this.name),
       v = this.value,
@@ -221,7 +258,7 @@ function eo_transform_style() {
   } else if (f) {
     for (var i = 0; i < m; ++i) {
       var o = nodes[i],
-          x = v.call(o);
+          x = v.call(o, data[i], i);
       x == null
           ? o.style.removeProperty(n)
           : o.style.setProperty(n, x, p);
@@ -239,6 +276,8 @@ function eo_transform_add() {
       n = ns.qualify(this.name),
       results = this.results;
   results.length = 0;
+  results.data = nodes.data;
+  results.parents = nodes;
   if (n.space) {
     for (var i = 0; i < m; ++i) {
       results.push(nodes[i].appendChild(document.createElementNS(n.space, n.local)));
@@ -247,9 +286,10 @@ function eo_transform_add() {
     var v = this.value,
         f = typeof v == "function" && v;
     if (f) {
+      var data = nodes.data || empty;
       for (var i = 0; i < m; ++i) {
         var o = nodes[i],
-            x = v.call(o);
+            x = v.call(o, data[i], i);
         results.push(o.appendChild(document.createTextNode(x)));
       }
     } else {
@@ -281,13 +321,14 @@ function eo_transform_remove() {
 
 function eo_transform_value() {
   var nodes = this.nodes,
+      data = nodes.data || empty,
       m = nodes.length,
       v = this.value,
       f = typeof v == "function" && v;
   if (f) {
     for (var i = 0; i < m; ++i) {
       var o = nodes[i],
-          x = v.call(o);
+          x = v.call(o, data[i], i);
       o.nodeValue = x;
     }
   } else {
@@ -299,17 +340,43 @@ function eo_transform_value() {
 
 function eo_transform_select() {
   var nodes = this.nodes,
+      data = nodes.data,
       results = this.results,
       m = nodes.length,
       e = this.expression,
       r = null,
       o;
   results.length = 0;
-  for (var i = 0; i < m; ++i) {
-    r = e.evaluate(nodes[i], XPathResult.UNORDERED_NODE_ITERATOR_TYPE, r);
-    while ((o = r.iterateNext()) != null) results.push(o);
+  results.parents = nodes;
+  if (data) {
+    results.data = [];
+    for (var i = 0; i < m; ++i) {
+      r = e.evaluate(nodes[i], XPathResult.UNORDERED_NODE_ITERATOR_TYPE, r);
+      while ((o = r.iterateNext()) != null) {
+        results.push(o);
+        results.data.push(data[i]);
+      }
+    }
+  } else {
+    for (var i = 0; i < m; ++i) {
+      r = e.evaluate(nodes[i], XPathResult.UNORDERED_NODE_ITERATOR_TYPE, r);
+      while ((o = r.iterateNext()) != null) results.push(o);
+    }
   }
 }
+
+function eo_transform_data() {
+  var nodes = this.nodes,
+      data = nodes.parents.data || empty,
+      results = nodes.data = [],
+      m = nodes.length,
+      v = this.value;
+  for (var i = 0; i < m; ++i) {
+    results.push(v.call(nodes[i], data[i], i));
+  }
+}
+
+var empty = {};
 eo.select = function(e) {
   return eo_select(e);
 };
