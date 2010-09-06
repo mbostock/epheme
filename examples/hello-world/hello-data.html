@@ -17,7 +17,7 @@ var eo = org.epheme;
 var data = [4, 8, 15, 16, 23, 42];
 
 eo.transform()
-  .select("span")
+  .selectAll("span")
     .data(data)
   .add("svg:svg")
     .attr("width", 100)
@@ -38,7 +38,7 @@ eo.transform()
 function refresh() {
   for (var i = 0; i < data.length; i++) data[i] = (data[i] + 1) % 100;
   eo.transform()
-    .select("text")
+    .selectAll("text")
       .data(data)
       .text(function(d) { return d; })
     .apply();

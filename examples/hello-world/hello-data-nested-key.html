@@ -43,23 +43,23 @@ for (var i = 0; i < 10; i++) {
 var t = eo.transform();
 
 t.select("#table")
-  .select("tr")
+  .selectAll("tr")
     .data(data)
     .index()
   .enter.add("tr")
-  .select("td")
-    .data(function(d) { return d; })
+  .selectAll("td")
+    .data(function(i, d) { return d; })
     .index()
   .enter.add("td")
     .style("background-color", function(d) { return "hsl(0,50%," + d + "%)"; })
     .text(function(d) { return d; });
 
 t.select("#table")
-  .select("tr")
+  .selectAll("tr")
     .data(data)
     .index()
-  .select("td")
-    .data(function(d) { return d; })
+  .selectAll("td")
+    .data(function(i, d) { return d; })
     .index()
     .style("background-color", function(d) { return "hsl(" + d + ",100%,50%)"; })
     .text(function(d) { return d; });

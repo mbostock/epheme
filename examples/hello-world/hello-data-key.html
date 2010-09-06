@@ -19,13 +19,13 @@ var i = 0, data = [
 ];
 
 var t = eo.transform()
-  .select("span")
+  .selectAll("span")
     .data(data)
-    .key("id", function(i, d) { return "span-" + d.id; });
+    .key("id", function(d) { return "span-" + d.id; });
 
 t.enter.select("body")
   .add("span")
-    .attr("id", function(i, d) { return "span-" + d.id; })
+    .attr("id", function(d) { return "span-" + d.id; })
   .add("svg:svg")
     .attr("width", 100)
     .attr("height", 100)
@@ -39,10 +39,10 @@ t.enter.select("body")
     .attr("stroke-width", 1.5)
     .style("font", "36pt Comic Sans MS")
     .style("text-shadow", "3px 3px 3px rgba(0,0,0,.4)")
-    .text(function(i, d) { return d.value; });
+    .text(function(d) { return d.value; });
 
 t.select("text")
-    .text(function(i, d) { return d.value; });
+    .text(function(d) { return d.value; });
 
 t.exit.remove();
 

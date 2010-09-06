@@ -142,6 +142,16 @@ eo.transform = function() {
       return transform_scope(action.actions);
     };
 
+    scope.selectAll = function(s) {
+      var action = {
+        impl: eo_transform_select_all,
+        selector: s,
+        actions: []
+      };
+      actions.push(action);
+      return transform_scope(action.actions);
+    };
+
     return scope;
   }
 
@@ -247,9 +257,8 @@ function eo_transform_add(nodes, data) {
       children.push(nodes[i].appendChild(document.createElement(n)));
     }
   }
-  // eo_transform_node_stack.unshift(children); // XXX
+  // XXX eo_transform_node_stack?
   eo_transform_actions(this.actions, children, data);
-  // eo_transform_node_stack.shift();
 }
 
 function eo_transform_remove(nodes, data) {
@@ -301,7 +310,18 @@ function eo_transform_text(nodes, data) {
 
 function eo_transform_select(nodes, data) {
   var selectNodes = [],
-      selectData = [],
+      m = nodes.length,
+      s = this.selector,
+      i; // the node index
+  for (i = 0; i < m; ++i) {
+    selectNodes.push(nodes[i].querySelector(s));
+  }
+  // XXX eo_transform_node_stack?
+  eo_transform_actions(this.actions, selectNodes, data);
+}
+
+function eo_transform_select_all(nodes, data) {
+  var selectNodes = [],
       m = nodes.length,
       s = this.selector,
       r, // the selector results for the current node
@@ -312,33 +332,34 @@ function eo_transform_select(nodes, data) {
       o; // the current node
   eo_transform_stack.unshift(null);
   eo_transform_node_stack.unshift(null);
+  eo_transform_index_stack.unshift(null);
   for (i = 0; i < m; ++i) {
     r = nodes[i].querySelectorAll(s);
     d = data[i];
     for (j = 0, k = r.length; j < k; ++j) {
       selectNodes.push(r[j]);
-      selectData.push(j); // indexes are the default data
     }
     eo_transform_stack[1] = d;
     eo_transform_node_stack[0] = nodes[i];
-    eo_transform_actions(this.actions, selectNodes, selectData);
+    eo_transform_index_stack[0] = i;
+    eo_transform_actions(this.actions, selectNodes, data);
     selectNodes.length = 0;
-    selectData.length = 0;
   }
   eo_transform_stack.shift();
   eo_transform_node_stack.shift();
+  eo_transform_index_stack.shift();
 }
 
 var eo_transform_stack = [],
-    eo_transform_node_stack = [];
+    eo_transform_node_stack = [],
+    eo_transform_index_stack = [];
 
 function eo_transform_data(nodes, data) {
   var v = this.value,
       m = nodes.length;
   if (typeof v == "function") {
-    var t = eo_transform_stack.shift();
+    eo_transform_stack[0] = eo_transform_index_stack[0]; // XXX
     v = v.apply(null, eo_transform_stack);
-    eo_transform_stack.unshift(t);
   }
   eo_transform_actions(this.actions, nodes, v);
 }

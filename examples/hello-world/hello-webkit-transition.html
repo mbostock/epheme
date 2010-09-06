@@ -51,10 +51,10 @@ var data = range(10).map(Math.random), index = 0;
 // element.querySelectorAll
 
 eo.transform()
-  .select("id('cells')")
-  .select("*")
+  .select("#cells")
+  .selectAll("div")
     .data(data)
-    .key("count(preceding-sibling::*)", function(i) { return i; })
+    .index()
   .enter.add("div")
     .attr("class", "cell")
     .style("bottom", 0)
@@ -62,7 +62,7 @@ eo.transform()
   .apply();
 
 setInterval(eo.transform()
-  .select("id('cells')/*")
+  .selectAll(".cell")
     .data(function() { return range(10).map(Math.random); })
     .style("top", function(d) { return (1 - d) * 300; })
     .style("background-color", function(d) { return "hsl(" + d * 360 + ",100%,50%)"; })

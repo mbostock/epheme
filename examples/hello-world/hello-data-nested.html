@@ -53,10 +53,10 @@ for (var i = 0; i < 10; i++) {
 }
 
 var t = eo.transform()
-  .select("tr")
+  .selectAll("tr")
     .data(data)
-  .select("td")
-    .data(function(d) { return d; })
+  .selectAll("td")
+    .data(function(i, d) { return d; })
     .style("background-color", function(d) { return "hsl(0,50%," + d + "%)"; })
     .text(function(d) { return d; })
   .apply();
