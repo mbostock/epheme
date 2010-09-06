@@ -25,6 +25,7 @@ body {
   text-align: center;
   padding-top: 6px;
   top: 300px;
+  background: -webkit-gradient(linear, left top, left bottom, from(transparent), to(steelblue));
   -webkit-transition-property: top, background-color;
   -webkit-transition-duration: 500ms;
   -webkit-transition-timing-function: ease, linear;
@@ -55,7 +56,7 @@ window.addEventListener("keypress", eo.transform()
   .selectAll(".cell")
     .data(function() { return range(n).map(Math.random); })
     .style("top", function(d) { return (1 - d) * 300; })
-    .style("background-color", function(d) { return "hsl(" + d * 360 + ",100%,50%)"; })
+    .style("background-color", function(d) { return "rgb(" + ~~(d * 255) + ",50,100)"; })
     .text(function(d) { return ~~(d * 100); })
   .apply, false);
 
