@@ -107,6 +107,22 @@ eo.transform = function() {
       return transform_scope(action.actions);
     };
 
+    scope.key = function(n, v) {
+      var action = {
+        impl: eo_transform_key,
+        name: document.createExpression(n, ns.resolve),
+        value: v,
+        actions: [],
+        enterActions: [],
+        exitActions: []
+      }
+      actions.push(action);
+      var s = transform_scope(action.actions);
+      s.enter = transform_scope(action.enterActions);
+      s.exit = transform_scope(action.exitActions);
+      return s;
+    };
+
     scope.attr = function(n, v) {
       actions.push({
         impl: eo_transform_attr,
@@ -319,7 +335,8 @@ function eo_transform_value(nodes, data) {
 }
 
 function eo_transform_select(nodes, data) {
-  var results = [],
+  var selectNodes = [],
+      selectData = [],
       m = nodes.length,
       e = this.expression,
       r = null,
@@ -328,10 +345,15 @@ function eo_transform_select(nodes, data) {
   eo_transform_stack.unshift(null);
   for (var i = 0; i < m; ++i) {
     r = e.evaluate(nodes[i], XPathResult.UNORDERED_NODE_ITERATOR_TYPE, r);
-    while ((o = r.iterateNext()) != null) results.push(o);
-    eo_transform_stack[1] = d = data[i];
-    eo_transform_actions(this.actions, results, d == null ? empty : d);
-    results.length = 0;
+    d = data[i];
+    while ((o = r.iterateNext()) != null) {
+      selectNodes.push(o);
+      selectData.push(d);
+    }
+    eo_transform_stack[1] = d;
+    eo_transform_actions(this.actions, selectNodes, selectData);
+    selectNodes.length = 0;
+    selectData.length = 0;
   }
   eo_transform_stack.shift();
 }
@@ -350,6 +372,54 @@ function eo_transform_data(nodes, data) {
     }
   }
   eo_transform_actions(this.actions, nodes, results);
+}
+
+function eo_transform_key(nodes, data) {
+  var n = this.name,
+      v = this.value,
+      enterNodes = [],
+      enterData = [],
+      updateNodes = [],
+      updateData = [],
+      exitNodes = [],
+      exitData = [];
+
+  var nodesByKey = {};
+  for (var i = 0, m = nodes.length; i < m; ++i) {
+    var o = nodes[i],
+        key = n.evaluate(o, XPathResult.STRING_TYPE, null);
+    if (key != null) nodesByKey[key.stringValue] = o;
+  }
+
+  var dataByKey = {};
+  for (var i = 0, m = data.length; i < m; ++i) {
+    var d = data[i];
+    eo_transform_stack[0] = d;
+    var key = v.apply(null, eo_transform_stack);
+    if (key != null) dataByKey[key] = d;
+  }
+
+  for (var key in dataByKey) {
+    var d = dataByKey[key];
+    if (key in nodesByKey) {
+      updateNodes.push(nodesByKey[key]);
+      updateData.push(d);
+    } else {
+      enterNodes.push(document);
+      enterData.push(d);
+    }
+  }
+
+  for (var key in nodesByKey) {
+    if (!(key in dataByKey)) {
+      exitNodes.push(nodesByKey[key]);
+      exitData.push(null);
+    }
+  }
+
+  eo_transform_actions(this.enterActions, enterNodes, enterData);
+  eo_transform_actions(this.actions, updateNodes, updateData);
+  eo_transform_actions(this.exitActions, exitNodes, exitData);
 }
 
 var empty = {};
