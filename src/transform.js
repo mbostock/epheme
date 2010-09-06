@@ -48,17 +48,6 @@ eo.transform = function() {
       var action = {
         impl: eo_transform_data,
         value: v,
-        actions: []
-      }
-      actions.push(action);
-      return transform_scope(action.actions);
-    };
-
-    scope.key = function(n, v) {
-      var action = {
-        impl: eo_transform_key,
-        name: n,
-        value: v,
         actions: [],
         enterActions: [],
         exitActions: []
@@ -67,22 +56,10 @@ eo.transform = function() {
       var s = transform_scope(action.actions);
       s.enter = transform_scope(action.enterActions);
       s.exit = transform_scope(action.exitActions);
-      return s;
-    };
-
-    scope.index = function(n, v) {
-      var action = {
-        impl: eo_transform_index,
-        name: n,
-        value: v,
-        actions: [],
-        enterActions: [],
-        exitActions: []
-      }
-      actions.push(action);
-      var s = transform_scope(action.actions);
-      s.enter = transform_scope(action.enterActions);
-      s.exit = transform_scope(action.exitActions);
+      s.key = function(n, v) {
+        action.key = {name: ns.qualify(n), value: v};
+        return s;
+      };
       return s;
     };
 
@@ -343,20 +320,14 @@ var eo_transform_stack = [],
     eo_transform_node_stack = [],
     eo_transform_index_stack = [];
 
-function eo_transform_data(nodes, data) {
-  var v = this.value,
-      m = nodes.length;
-  if (typeof v == "function") {
-    eo_transform_stack[0] = eo_transform_index_stack[0]; // XXX
-    v = v.apply(null, eo_transform_stack);
-  }
-  eo_transform_actions(this.actions, nodes, v);
-}
-
-function eo_transform_index(nodes, data) {
-  var n = nodes.length,
-      m = data.length,
-      k = n < m ? n : m,
+function eo_transform_data(nodes) {
+  var data = this.value,
+      m = nodes.length,
+      n, // data length
+      key = this.key,
+      kn, // key name
+      kv, // key value
+      k, // current key
       i, // current index
       j, // current index
       d, // current datum
@@ -366,84 +337,82 @@ function eo_transform_index(nodes, data) {
       updateNodes = [],
       updateData = [],
       exitNodes = [],
-      exitData = [];
+      exitData = [],
+      nodesByKey,
+      dataByKey;
 
-  for (i = 0; i < k; ++i) {
-    updateNodes.push(nodes[i]);
-    updateData.push(data[i]);
+  if (typeof data == "function") {
+    eo_transform_stack[0] = eo_transform_index_stack[0]; // XXX
+    data = data.apply(null, eo_transform_stack);
   }
 
-  for (j = i; j < m; ++j) {
-    enterNodes.push(eo_transform_node_stack[0]); // XXX what about add?
-    enterData.push(data[j]);
-  }
+  n = data.length;
 
-  for (j = i; j < n; ++j) {
-    exitNodes.push(nodes[j]);
-    exitData.push(null);
-  }
+  if (key) {
+    kn = key.name;
+    kv = key.value;
+    nodesByKey = {};
+    dataByKey = {};
 
-  // console.log("enter", enterData);
-  // console.log("update", updateData);
-  // console.log("exit", exitData);
+    // compute map from key -> node
+    if (kn.local) {
+      for (i = 0; i < m; ++i) {
+        o = nodes[i];
+        k = o.getAttributeNS(kn.space, kn.local);
+        if (k != null) nodesByKey[k] = o;
+      }
+    } else {
+      for (i = 0; i < m; ++i) {
+        o = nodes[i];
+        k = o.getAttribute(kn);
+        if (k != null) nodesByKey[k] = o;
+      }
+    }
 
-  eo_transform_actions(this.enterActions, enterNodes, enterData);
-  eo_transform_actions(this.actions, updateNodes, updateData);
-  eo_transform_actions(this.exitActions, exitNodes, exitData);
-}
+    // compute map from key -> data
+    for (i = 0; i < n; ++i) {
+      eo_transform_stack[0] = d = data[i];
+      k = kv.apply(null, eo_transform_stack);
+      if (k != null) dataByKey[k] = d;
+    }
 
-function eo_transform_key(nodes, data) {
-  var n = ns.qualify(this.name),
-      v = this.value,
-      i, // current index
-      m, // current length
-      key, // current key
-      d, // current datum
-      o, // current node
-      nodesByKey = {},
-      dataByKey = {},
-      enterNodes = [],
-      enterData = [],
-      updateNodes = [],
-      updateData = [],
-      exitNodes = [],
-      exitData = [];
+    // compute entering and updating nodes
+    for (k in dataByKey) {
+      d = dataByKey[k];
+      if (k in nodesByKey) {
+        updateNodes.push(nodesByKey[k]);
+        updateData.push(d);
+      } else {
+        enterNodes.push(eo_transform_node_stack[0]); // XXX what about add?
+        enterData.push(d);
+      }
+    }
 
-  if (n.local) {
-    for (i = 0, m = nodes.length; i < m; ++i) {
-      o = nodes[i];
-      key = o.getAttributeNS(n.space, n.local);
-      if (key != null) nodesByKey[key] = o;
+    // compute exiting nodes
+    for (k in nodesByKey) {
+      if (!(k in dataByKey)) {
+        exitNodes.push(nodesByKey[k]);
+        exitData.push(null);
+      }
     }
   } else {
-    for (i = 0, m = nodes.length; i < m; ++i) {
-      o = nodes[i];
-      key = o.getAttribute(n);
-      if (key != null) nodesByKey[key] = o;
+    k = n < m ? n : m;
+
+    // compute updating nodes
+    for (i = 0; i < k; ++i) {
+      updateNodes.push(nodes[i]);
+      updateData.push(data[i]);
     }
-  }
 
-  for (i = 0, m = data.length; i < m; ++i) {
-    d = data[i];
-    eo_transform_stack[0] = d;
-    key = v.apply(null, eo_transform_stack);
-    if (key != null) dataByKey[key] = d;
-  }
-
-  for (key in dataByKey) {
-    d = dataByKey[key];
-    if (key in nodesByKey) {
-      updateNodes.push(nodesByKey[key]);
-      updateData.push(d);
-    } else {
+    // compute entering nodes
+    for (j = i; j < n; ++j) {
       enterNodes.push(eo_transform_node_stack[0]); // XXX what about add?
-      enterData.push(d);
+      enterData.push(data[j]);
     }
-  }
 
-  for (key in nodesByKey) {
-    if (!(key in dataByKey)) {
-      exitNodes.push(nodesByKey[key]);
+    // compute exiting nodes
+    for (j = i; j < m; ++j) {
+      exitNodes.push(nodes[j]);
       exitData.push(null);
     }
   }
