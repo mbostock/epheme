@@ -56,6 +56,7 @@ var t = eo.transform()
   .select("//tr")
     .data(data)
   .select("td")
+    .data(function(i, d) { return d[i]; })
     .style("background-color", function(d) { return "hsl(0,50%," + d + "%)"; })
     .text(function(d) { return d; })
   .apply();
@@ -68,7 +69,7 @@ function refresh() {
   t.apply();
 }
 
-// setInterval(refresh, 250);
+setInterval(refresh, 250);
 
     </script>
   </body>

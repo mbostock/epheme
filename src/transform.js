@@ -282,9 +282,9 @@ function eo_transform_select(nodes, data) {
   for (var i = 0; i < m; ++i) {
     r = e.evaluate(nodes[i], XPathResult.UNORDERED_NODE_ITERATOR_TYPE, r);
     d = data[i];
-    while ((o = r.iterateNext()) != null) {
+    for (var j = 0; (o = r.iterateNext()) != null; j++) {
       selectNodes.push(o);
-      selectData.push(d);
+      selectData.push(j);
     }
     eo_transform_stack[1] = d;
     eo_transform_actions(this.actions, selectNodes, selectData);
