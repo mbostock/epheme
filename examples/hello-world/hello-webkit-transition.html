@@ -41,6 +41,15 @@ var eo = org.epheme;
 
 var data = range(10).map(Math.random), index = 0;
 
+// 'div' is an operator in XPath
+// ... so select("div") is an illegal XPath expression
+// ... which really makes me think we should use the selectors API
+//
+// document.querySelector
+// document.querySelectorAll
+// element.querySelector
+// element.querySelectorAll
+
 eo.transform()
   .select("id('cells')")
   .select("*")

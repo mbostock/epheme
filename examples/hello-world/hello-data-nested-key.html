@@ -31,7 +31,7 @@ td {
 
 var eo = org.epheme;
 
-var data = [], id = 0;
+var data = [];
 
 for (var i = 0; i < 10; i++) {
   for (var j = 0, a = []; j < 10; j++) {
@@ -42,25 +42,25 @@ for (var i = 0; i < 10; i++) {
 
 var t = eo.transform();
 
-t.select("id('table')")
+t.select("#table")
   .select("tr")
     .data(data)
-    .key("count(preceding-sibling::*)", function(i) { return i; })
+    .index()
   .enter.add("tr")
   .select("td")
     .data(function(d) { return d; })
-    .key("count(preceding-sibling::*)", function(i) { return i; })
+    .index()
   .enter.add("td")
     .style("background-color", function(d) { return "hsl(0,50%," + d + "%)"; })
     .text(function(d) { return d; });
 
-t.select("id('table')")
+t.select("#table")
   .select("tr")
     .data(data)
-    .key("count(preceding-sibling::*)", function(i) { return i; })
+    .index()
   .select("td")
     .data(function(d) { return d; })
-    .key("count(preceding-sibling::*)", function(i) { return i; })
+    .index()
     .style("background-color", function(d) { return "hsl(" + d + ",100%,50%)"; })
     .text(function(d) { return d; });
 
@@ -75,7 +75,7 @@ function refresh() {
   t.apply();
 }
 
-setInterval(refresh, 30);
+// setInterval(refresh, 30);
 
     </script>
   </body>
