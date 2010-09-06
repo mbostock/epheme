@@ -17,6 +17,7 @@ var t = eo.transform()
     .key("@id", function(d) { return "span-" + d.id; });
 
 t.enter.select("//body")
+    .data(function(i, d) { return d; })
   .add("span")
     .attr("id", function(d) { return "span-" + d.id; })
   .add("svg:svg")
@@ -35,6 +36,7 @@ t.enter.select("//body")
     .text(function(d) { return d.value; });
 
 t.select("svg:svg/svg:text")
+    .data(function(i, d) { return d; })
     .text(function(d) { return d.value; });
 
 t.exit.remove(".");

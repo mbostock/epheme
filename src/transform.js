@@ -7,12 +7,28 @@ eo.transform = function() {
   // per-element delay would be great
   // are transitions scoped, or global?
 
+  //
   // TODO data and indexes:
   //
   // Is the current index available in the callback?  Perhaps the `this` context
   // is a single-element wrapper, with similar behavior to NNS and eo.select?
   // It's a bit weird that data is a scoping action, as opposed to setting the
   // data on the current scope, but I sort of like it.
+  //
+  // Shorthand data properties?
+  //
+  // "copy" or "inherit" = function(i, d) { return d; }
+  // "index" = function(i) { return i; } (unless overridden ... hmm)
+  // "dereference" or "recurse" = function(i, d) { return d[i]; }
+  //
+  // Another possibility is that there are different aliases for `select` that
+  // have different data properties. For example, if there were a `selectOne`
+  // method, that could automatically use the "inherit" data property, as the
+  // `add` method does currently. Maybe there is a `selectMany` that uses
+  // "recurse" by default? Of course, the problem with recurse by default is
+  // that it makes it difficult to override the behavior, since the indexes are
+  // hidden.
+  //
 
   // TODO api uncertainty:
   // remove returns select(removed elements)?
