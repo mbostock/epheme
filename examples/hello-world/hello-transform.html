@@ -32,10 +32,10 @@ eo.transform()
     .text(function() { return ~~(Math.random() * 100); })
   .apply();
 
-// setInterval(eo.transform()
-//     .selectAll("text")
-//     .text(function() { return ~~(Math.random() * 100); })
-//     .apply, 1000);
+window.addEventListener("keypress", eo.transform()
+    .selectAll("text")
+    .text(function() { return ~~(Math.random() * 100); })
+    .apply, false);
 
     </script>
   </body>

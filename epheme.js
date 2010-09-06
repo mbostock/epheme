@@ -385,29 +385,18 @@ function eo_transform_select(nodes, data) {
 }
 
 function eo_transform_select_all(nodes, data) {
-  var selectNodes = [],
-      m = nodes.length,
+  var m = nodes.length,
       s = this.selector,
-      r, // the selector results for the current node
       i, // the node index
-      j, // the result index
-      k, // the result length
-      d, // the current datum
       o; // the current node
   eo_transform_stack.unshift(null);
   eo_transform_node_stack.unshift(null);
   eo_transform_index_stack.unshift(null);
   for (i = 0; i < m; ++i) {
-    r = nodes[i].querySelectorAll(s);
-    d = data[i];
-    for (j = 0, k = r.length; j < k; ++j) {
-      selectNodes.push(r[j]);
-    }
-    eo_transform_stack[1] = d;
-    eo_transform_node_stack[0] = nodes[i];
+    eo_transform_stack[1] = data[i];
+    eo_transform_node_stack[0] = o = nodes[i];
     eo_transform_index_stack[0] = i;
-    eo_transform_actions(this.actions, selectNodes, data);
-    selectNodes.length = 0;
+    eo_transform_actions(this.actions, o.querySelectorAll(s), data);
   }
   eo_transform_stack.shift();
   eo_transform_node_stack.shift();

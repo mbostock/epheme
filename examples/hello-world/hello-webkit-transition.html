@@ -61,13 +61,13 @@ eo.transform()
     .style("left", function() { return index++ * 30; })
   .apply();
 
-setInterval(eo.transform()
+window.addEventListener("keypress", eo.transform()
   .selectAll(".cell")
     .data(function() { return range(10).map(Math.random); })
     .style("top", function(d) { return (1 - d) * 300; })
     .style("background-color", function(d) { return "hsl(" + d * 360 + ",100%,50%)"; })
     .text(function(d) { return ~~(d * 100); })
-  .apply, 750);
+  .apply, false);
 
 function range(n) {
   var array = [];
