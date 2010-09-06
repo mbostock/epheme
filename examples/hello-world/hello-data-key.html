@@ -9,7 +9,14 @@
 
 var eo = org.epheme;
 
-var i = 0, data = [];
+var i = 0, data = [
+  {id: i++, value: 4},
+  {id: i++, value: 8},
+  {id: i++, value: 15},
+  {id: i++, value: 16},
+  {id: i++, value: 23},
+  {id: i++, value: 42}
+];
 
 var t = eo.transform()
   .select("//span")
@@ -44,13 +51,12 @@ t.exit.remove(".");
 t.apply();
 
 function refresh() {
-  // TODO would like a better way to track identifiers and indexes.
-  if (data.length > 5) data.shift();
+  data.shift();
   data.push({id: i++ % 7, value: ~~(Math.random() * 100)});
   t.apply();
 }
 
-setInterval(refresh, 100);
+// setInterval(refresh, 1000);
 
     </script>
   </body>
