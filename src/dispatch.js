@@ -1,4 +1,4 @@
-eo.dispatch = function(that) {
+function eo_dispatch(that) {
   var types = {};
 
   that.on = function(type, handler) {
@@ -34,4 +34,4 @@ eo.dispatch = function(that) {
   };
 
   return that;
-};
+}

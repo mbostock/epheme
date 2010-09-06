@@ -75,7 +75,7 @@ function reflect(f) {
   };
 }
 
-function linear() {
+function linear(t) {
   return t;
 }
 

@@ -16,7 +16,7 @@ function eo_transitioner() {
 
   timer = setTimeout(start, repeatDelay);
 
-  eo.dispatch(transition);
+  eo_dispatch(transition);
 
   function start() {
     timer = 0;
