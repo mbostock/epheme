@@ -25,6 +25,7 @@ body {
   text-align: center;
   padding-top: 6px;
   top: 300px;
+  bottom: 0;
   background: -webkit-gradient(linear, left top, left bottom, from(transparent), to(steelblue));
   -webkit-transition-property: top, background-color;
   -webkit-transition-duration: 500ms;
@@ -48,7 +49,6 @@ eo.transform()
     .data(range(n))
   .enter.add("div")
     .attr("class", "cell")
-    .style("bottom", 0)
     .style("left", function(i) { return i * 30; })
   .apply();
 

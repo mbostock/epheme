@@ -1,3 +1,8 @@
+if (!Object.create) Object.create = function(o) {
+  /** @constructor */ function f() {}
+  f.prototype = o;
+  return new f();
+};
 (function(_) {
   var eo = (_.org || (_.org = {})).epheme = {};
   eo.version = "0.0.0"; // semver

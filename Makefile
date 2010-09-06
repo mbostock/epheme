@@ -4,6 +4,7 @@ JS_COMPILER = \
 	--charset UTF-8
 
 SRC_FILES = \
+	src/object.js \
 	src/start.js \
 	src/ns.js \
 	src/transform.js \
