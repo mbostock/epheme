@@ -1,0 +1,71 @@
+<html>
+  <head>
+    <title>Hello, data!</title>
+    <script type="text/javascript" src="../../epheme.js"></script>
+    <style type="text/css">
+
+body {
+  font: 14px Helvetica Neue;
+  text-rendering: optimizeLegibility;
+  margin: 1em;
+}
+
+#cells {
+  position: relative;
+  margin-top: .5em;
+  height: 300px;
+  overflow: hidden;
+}
+
+.cell {
+  position: absolute;
+  background: steelblue;
+  color: white;
+  width: 28px;
+  text-align: center;
+  padding-top: 6px;
+  top: 300px;
+  -webkit-transition-property: top, background-color;
+  -webkit-transition-duration: 500ms;
+  -webkit-transition-timing-function: ease, linear;
+}
+
+    </style>
+  </head>
+  <body>
+    Your lucky numbers are:<br>
+    <div id="cells"></div>
+    <script type="text/javascript">
+
+var eo = org.epheme;
+
+var data = range(10).map(Math.random), index = 0;
+
+eo.transform()
+  .select("id('cells')")
+  .select("*")
+    .data(data)
+    .key("count(preceding-sibling::*)", function(i) { return i; })
+  .enter.add("div")
+    .attr("class", "cell")
+    .style("bottom", 0)
+    .style("left", function() { return index++ * 30; })
+  .apply();
+
+setInterval(eo.transform()
+  .select("id('cells')/*")
+    .data(function() { return range(10).map(Math.random); })
+    .style("top", function(d) { return (1 - d) * 300; })
+    .style("background-color", function(d) { return "hsl(" + d * 360 + ",100%,50%)"; })
+    .text(function(d) { return ~~(d * 100); })
+  .apply, 750);
+
+function range(n) {
+  var array = [];
+  for (var i = 0; i < n; i++) array.push(i);
+  return array;
+}
+
+    </script>
+  </body>
+</html>
