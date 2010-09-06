@@ -214,7 +214,12 @@ eo.transform = function() {
 };
 
 function eo_transform_actions(actions, nodes, data) {
-  for (var i = 0, n = actions.length; i < n; ++i) actions[i].impl(nodes, data);
+  for (var i = 0, n = actions.length; i < n; ++i) {
+    var a = actions[i];
+    // console.group(a.impl.name);
+    a.impl(nodes, data);
+    // console.groupEnd();
+  }
 }
 
 function eo_transform_attr(nodes, data) {
@@ -315,7 +320,9 @@ function eo_transform_add(nodes, data) {
       children.push(nodes[i].appendChild(document.createElement(n)));
     }
   }
+  // eo_transform_node_stack.unshift(children); // XXX
   eo_transform_actions(this.actions, children, data);
+  // eo_transform_node_stack.shift();
 }
 
 function eo_transform_remove(nodes, data) {
@@ -359,6 +366,7 @@ function eo_transform_select(nodes, data) {
       d,
       o;
   eo_transform_stack.unshift(null);
+  eo_transform_node_stack.unshift(null);
   for (var i = 0; i < m; ++i) {
     r = e.evaluate(nodes[i], XPathResult.UNORDERED_NODE_ITERATOR_TYPE, r);
     d = data[i];
@@ -367,27 +375,27 @@ function eo_transform_select(nodes, data) {
       selectData.push(j);
     }
     eo_transform_stack[1] = d;
+    eo_transform_node_stack[0] = nodes[i];
     eo_transform_actions(this.actions, selectNodes, selectData);
     selectNodes.length = 0;
     selectData.length = 0;
   }
   eo_transform_stack.shift();
+  eo_transform_node_stack.shift();
 }
 
-var eo_transform_stack = [];
+var eo_transform_stack = [],
+    eo_transform_node_stack = [];
 
 function eo_transform_data(nodes, data) {
-  var results = this.value,
-      m = nodes.length,
-      v = results;
+  var v = this.value,
+      m = nodes.length;
   if (typeof v == "function") {
-    results = [];
-    for (var i = 0; i < m; ++i) {
-      eo_transform_stack[0] = data[i];
-      results.push(v.apply(null, eo_transform_stack));
-    }
+    var t = eo_transform_stack.shift();
+    v = v.apply(null, eo_transform_stack);
+    eo_transform_stack.unshift(t);
   }
-  eo_transform_actions(this.actions, nodes, results);
+  eo_transform_actions(this.actions, nodes, v);
 }
 
 function eo_transform_key(nodes, data) {
@@ -404,16 +412,22 @@ function eo_transform_key(nodes, data) {
   for (var i = 0, m = nodes.length; i < m; ++i) {
     var o = nodes[i],
         key = n.evaluate(o, XPathResult.STRING_TYPE, null);
-    if (key != null) nodesByKey[key.stringValue] = o;
+    if (key != null) {
+      // console.log(key.stringValue, o, i);
+      nodesByKey[key.stringValue] = o;
+    }
   }
 
   var dataByKey = {};
+  eo_transform_stack.unshift(null);
   for (var i = 0, m = data.length; i < m; ++i) {
     var d = data[i];
-    eo_transform_stack[0] = d;
+    eo_transform_stack[0] = i; // XXX passing index to key function
+    eo_transform_stack[1] = d;
     var key = v.apply(null, eo_transform_stack);
     if (key != null) dataByKey[key] = d;
   }
+  eo_transform_stack.shift();
 
   for (var key in dataByKey) {
     var d = dataByKey[key];
@@ -421,7 +435,7 @@ function eo_transform_key(nodes, data) {
       updateNodes.push(nodesByKey[key]);
       updateData.push(d);
     } else {
-      enterNodes.push(document);
+      enterNodes.push(eo_transform_node_stack[0]); // XXX what about add?
       enterData.push(d);
     }
   }
@@ -432,6 +446,10 @@ function eo_transform_key(nodes, data) {
       exitData.push(null);
     }
   }
+
+  // console.log("enter", enterData);
+  // console.log("update", updateData);
+  // console.log("exit", exitData);
 
   eo_transform_actions(this.enterActions, enterNodes, enterData);
   eo_transform_actions(this.actions, updateNodes, updateData);
