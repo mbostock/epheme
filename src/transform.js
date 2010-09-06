@@ -1,6 +1,5 @@
 var eo_transform_stack = [],
     eo_transform_node_stack = [],
-    eo_transform_index_stack = [],
     eo_transform_empty = [];
 
 eo.transform = function() {

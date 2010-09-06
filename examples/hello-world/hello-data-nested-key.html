@@ -47,7 +47,7 @@ t.select("#table")
     .data(data)
   .enter.add("tr")
   .selectAll("td")
-    .data(function(i, d) { return d; })
+    .data(function(d) { return d; })
   .enter.add("td")
     .style("background-color", function(d) { return "hsl(0,50%," + d + "%)"; })
     .text(function(d) { return d; });
@@ -56,7 +56,7 @@ t.select("#table")
   .selectAll("tr")
     .data(data)
   .selectAll("td")
-    .data(function(i, d) { return d; })
+    .data(function(d) { return d; })
     .style("background-color", function(d) { return "hsl(" + d + ",100%,50%)"; })
     .text(function(d) { return d; });
 

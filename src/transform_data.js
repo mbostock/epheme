@@ -20,8 +20,9 @@ function eo_transform_data(nodes) {
       dataByKey; // map key -> data
 
   if (typeof data == "function") {
-    eo_transform_stack[0] = eo_transform_index_stack[0];
+    d = eo_transform_stack.shift();
     data = data.apply(null, eo_transform_stack);
+    eo_transform_stack.unshift(d);
   }
 
   n = data.length;

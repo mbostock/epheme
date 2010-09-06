@@ -26,7 +26,6 @@ var ns = {
 };
 var eo_transform_stack = [],
     eo_transform_node_stack = [],
-    eo_transform_index_stack = [],
     eo_transform_empty = [];
 
 eo.transform = function() {
@@ -232,8 +231,9 @@ function eo_transform_data(nodes) {
       dataByKey; // map key -> data
 
   if (typeof data == "function") {
-    eo_transform_stack[0] = eo_transform_index_stack[0];
+    d = eo_transform_stack.shift();
     data = data.apply(null, eo_transform_stack);
+    eo_transform_stack.unshift(d);
   }
 
   n = data.length;
@@ -354,16 +354,13 @@ function eo_transform_select_all(nodes, data) {
       o; // the current node
   eo_transform_stack.unshift(null);
   eo_transform_node_stack.unshift(null);
-  eo_transform_index_stack.unshift(null);
   for (i = 0; i < m; ++i) {
     eo_transform_stack[1] = data[i];
     eo_transform_node_stack[0] = o = nodes[i];
-    eo_transform_index_stack[0] = i;
     eo_transform_actions(this.actions, o.querySelectorAll(s), data);
   }
   eo_transform_stack.shift();
   eo_transform_node_stack.shift();
-  eo_transform_index_stack.shift();
 }
 function eo_transform_style(nodes, data) {
   var m = nodes.length,
