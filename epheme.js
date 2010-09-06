@@ -307,10 +307,6 @@ function eo_transform_data(nodes) {
     }
   }
 
-  // console.log("enter", enterData);
-  // console.log("update", updateData);
-  // console.log("exit", exitData);
-
   eo_transform_actions(this.enterActions, enterNodes, enterData);
   eo_transform_actions(this.actions, updateNodes, updateData);
   eo_transform_actions(this.exitActions, exitNodes, exitData);
