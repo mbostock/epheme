@@ -39,31 +39,22 @@ body {
 
 var eo = org.epheme;
 
-var data = range(10).map(Math.random), index = 0;
-
-// 'div' is an operator in XPath
-// ... so select("div") is an illegal XPath expression
-// ... which really makes me think we should use the selectors API
-//
-// document.querySelector
-// document.querySelectorAll
-// element.querySelector
-// element.querySelectorAll
+var n = 10;
 
 eo.transform()
   .select("#cells")
   .selectAll("div")
-    .data(data)
+    .data(range(n))
     .index()
   .enter.add("div")
     .attr("class", "cell")
     .style("bottom", 0)
-    .style("left", function() { return index++ * 30; })
+    .style("left", function(i) { return i * 30; })
   .apply();
 
 window.addEventListener("keypress", eo.transform()
   .selectAll(".cell")
-    .data(function() { return range(10).map(Math.random); })
+    .data(function() { return range(n).map(Math.random); })
     .style("top", function(d) { return (1 - d) * 300; })
     .style("background-color", function(d) { return "hsl(" + d * 360 + ",100%,50%)"; })
     .text(function(d) { return ~~(d * 100); })
