@@ -1,4 +1,4 @@
-function eo_transform_style(nodes, data) {
+function eo_transform_style(nodes) {
   var m = nodes.length,
       n = this.name,
       v = this.value,
@@ -8,20 +8,20 @@ function eo_transform_style(nodes, data) {
       x; // current value (for value functions)
   if (v == null) {
     for (i = 0; i < m; ++i) {
-      nodes[i].style.removeProperty(n);
+      nodes[i].node.style.removeProperty(n);
     }
   } else if (typeof v == "function") {
     for (i = 0; i < m; ++i) {
-      eo_transform_stack[0] = data[i];
       o = nodes[i];
+      eo_transform_stack[0] = o.data;
       x = v.apply(null, eo_transform_stack);
       x == null
-          ? o.style.removeProperty(n)
-          : o.style.setProperty(n, x, p);
+          ? o.node.style.removeProperty(n)
+          : o.node.style.setProperty(n, x, p);
     }
   } else {
     for (i = 0; i < m; ++i) {
-      nodes[i].style.setProperty(n, v, p);
+      nodes[i].node.style.setProperty(n, v, p);
     }
   }
 }

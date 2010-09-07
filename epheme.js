@@ -30,7 +30,6 @@ var ns = {
 
 };
 var eo_transform_stack = [],
-    eo_transform_node_stack = [],
     eo_transform_empty = [];
 
 eo.transform = function() {
@@ -140,36 +139,39 @@ eo.transform = function() {
 
   transform.apply = function() {
     eo_transform_stack.unshift(null);
-    eo_transform_actions(actions, [document], eo_transform_empty);
+    eo_transform_actions(actions, [{node: document, index: 0}]);
     eo_transform_stack.shift();
     return transform;
   };
 
   return transform_scope(actions);
 };
-function eo_transform_actions(actions, nodes, data) {
+function eo_transform_actions(actions, nodes) {
   var n = actions.length,
       i; // current index
-  for (i = 0; i < n; ++i) actions[i].impl(nodes, data);
+  for (i = 0; i < n; ++i) actions[i].impl(nodes);
 }
-function eo_transform_add(nodes, data) {
+function eo_transform_add(nodes) {
   var m = nodes.length,
       n = this.name,
       childNodes = [],
-      i; // current index
+      i, // current index
+      o, // current node
+      c; // current child
   if (n.local) {
     for (i = 0; i < m; ++i) {
-      childNodes.push(nodes[i].appendChild(document.createElementNS(n.space, n.local)));
+      childNodes.push(c = Object.create(o = nodes[i]));
+      c.node = (c.parentNode = o.node).appendChild(document.createElementNS(n.space, n.local));
     }
   } else {
     for (i = 0; i < m; ++i) {
-      childNodes.push(nodes[i].appendChild(document.createElement(n)));
+      childNodes.push(c = Object.create(o = nodes[i]));
+      c.node = (c.parentNode = o.node).appendChild(document.createElement(n));
     }
   }
-  // XXX eo_transform_node_stack?
-  eo_transform_actions(this.actions, childNodes, data);
+  eo_transform_actions(this.actions, childNodes);
 }
-function eo_transform_attr(nodes, data) {
+function eo_transform_attr(nodes) {
   var m = nodes.length,
       n = this.name,
       v = this.value,
@@ -179,38 +181,36 @@ function eo_transform_attr(nodes, data) {
   if (n.local) {
     if (v == null) {
       for (i = 0; i < m; ++i) {
-        nodes[i].removeAttributeNS(n.space, n.local);
+        nodes[i].node.removeAttributeNS(n.space, n.local);
       }
     } else if (typeof v == "function") {
       for (i = 0; i < m; ++i) {
-        eo_transform_stack[0] = data[i];
-        o = nodes[i];
-        x = v.apply(null, eo_transform_stack);
+        eo_transform_stack[0] = (o = nodes[i]).data;
+        x = v.apply(o, eo_transform_stack);
         x == null
-            ? o.removeAttributeNS(n.space, n.local)
-            : o.setAttributeNS(n.space, n.local, x);
+            ? o.node.removeAttributeNS(n.space, n.local)
+            : o.node.setAttributeNS(n.space, n.local, x);
       }
     } else {
       for (i = 0; i < m; ++i) {
-        nodes[i].setAttributeNS(n.space, n.local, v);
+        nodes[i].node.setAttributeNS(n.space, n.local, v);
       }
     }
   } else if (v == null) {
     for (i = 0; i < m; ++i) {
-      nodes[i].removeAttribute(n);
+      nodes[i].node.removeAttribute(n);
     }
   } else if (typeof v == "function") {
     for (i = 0; i < m; ++i) {
-      eo_transform_stack[0] = data[i];
-      o = nodes[i];
+      eo_transform_stack[0] = (o = nodes[i]).data;
       x = v.apply(null, eo_transform_stack);
       x == null
-          ? o.removeAttribute(n)
-          : o.setAttribute(n, x);
+          ? o.node.removeAttribute(n)
+          : o.node.setAttribute(n, x);
     }
   } else {
     for (i = 0; i < m; ++i) {
-      nodes[i].setAttribute(n, v);
+      nodes[i].node.setAttribute(n, v);
     }
   }
 }
@@ -227,11 +227,8 @@ function eo_transform_data(nodes) {
       d, // current datum
       o, // current node
       enterNodes = [],
-      enterData = [],
       updateNodes = [],
-      updateData = [],
       exitNodes = [],
-      exitData = [],
       nodesByKey, // map key -> node
       dataByKey; // map key -> data
 
@@ -248,19 +245,24 @@ function eo_transform_data(nodes) {
     kv = key.value;
     nodesByKey = {};
     dataByKey = {};
+    indexesByKey = {};
 
     // compute map from key -> node
     if (kn.local) {
       for (i = 0; i < m; ++i) {
-        o = nodes[i];
-        k = o.getAttributeNS(kn.space, kn.local);
-        if (k != null) nodesByKey[k] = o;
+        o = nodes[i].node;
+        if (o) {
+          k = o.getAttributeNS(kn.space, kn.local);
+          if (k != null) nodesByKey[k] = o;
+        }
       }
     } else {
       for (i = 0; i < m; ++i) {
-        o = nodes[i];
-        k = o.getAttribute(kn);
-        if (k != null) nodesByKey[k] = o;
+        o = nodes[i].node;
+        if (o) {
+          k = o.getAttribute(kn);
+          if (k != null) nodesByKey[k] = o;
+        }
       }
     }
 
@@ -268,26 +270,37 @@ function eo_transform_data(nodes) {
     for (i = 0; i < n; ++i) {
       eo_transform_stack[0] = d = data[i];
       k = kv.apply(null, eo_transform_stack);
-      if (k != null) dataByKey[k] = d;
+      if (k != null) {
+        dataByKey[k] = d;
+        indexesByKey[k] = i;
+      }
     }
 
     // compute entering and updating nodes
     for (k in dataByKey) {
       d = dataByKey[k];
-      if (k in nodesByKey) {
-        updateNodes.push(nodesByKey[k]);
-        updateData.push(d);
+      i = indexesByKey[k];
+      if (o = nodesByKey[k]) {
+        updateNodes.push({
+          node: o,
+          data: d,
+          key: k,
+          index: i
+        });
       } else {
-        enterNodes.push(eo_transform_node_stack[0]);
-        enterData.push(d);
+        enterNodes.push({
+          node: nodes.parentNode,
+          data: d,
+          key: k,
+          index: i
+        });
       }
     }
 
     // compute exiting nodes
     for (k in nodesByKey) {
       if (!(k in dataByKey)) {
-        exitNodes.push(nodesByKey[k]);
-        exitData.push(null);
+        exitNodes.push({node: nodesByKey[k]});
       }
     }
   } else {
@@ -295,28 +308,35 @@ function eo_transform_data(nodes) {
 
     // compute updating nodes
     for (i = 0; i < k; ++i) {
-      updateNodes.push(nodes[i]);
-      updateData.push(data[i]);
+      (o = nodes[i]).data = data[i];
+      if (o.node) {
+        updateNodes.push(o);
+      } else {
+        o.node = o.parentNode;
+        enterNodes.push(o);
+      }
     }
 
     // compute entering nodes
     for (j = i; j < n; ++j) {
-      enterNodes.push(eo_transform_node_stack[0]);
-      enterData.push(data[j]);
+      enterNodes.push({
+        node: nodes.parentNode,
+        data: data[j],
+        index: j
+      });
     }
 
     // compute exiting nodes
     for (j = i; j < m; ++j) {
       exitNodes.push(nodes[j]);
-      exitData.push(null);
     }
   }
 
-  eo_transform_actions(this.enterActions, enterNodes, enterData);
-  eo_transform_actions(this.actions, updateNodes, updateData);
-  eo_transform_actions(this.exitActions, exitNodes, exitData);
+  eo_transform_actions(this.enterActions, enterNodes);
+  eo_transform_actions(this.actions, updateNodes);
+  eo_transform_actions(this.exitActions, exitNodes);
 }
-function eo_transform_remove(nodes, data) {
+function eo_transform_remove(nodes) {
   var m = nodes.length,
       s = this.selector,
       r, // the selected nodes (for selectors)
@@ -326,12 +346,12 @@ function eo_transform_remove(nodes, data) {
       o; // current node to remove
   if (s == null) {
     for (i = 0; i < m; ++i) {
-      o = nodes[i];
+      o = nodes[i].node;
       o.parentNode.removeChild(o);
     }
   } else {
     for (i = 0; i < m; ++i) {
-      r = nodes[i].querySelectorAll(s);
+      r = nodes[i].node.querySelectorAll(s);
       for (j = 0, k = r.length; j < k; j++) {
         o = r[j];
         o.parentNode.removeChild(o);
@@ -339,31 +359,42 @@ function eo_transform_remove(nodes, data) {
     }
   }
 }
-function eo_transform_select(nodes, data) {
+function eo_transform_select(nodes) {
   var selectedNodes = [],
       m = nodes.length,
       s = this.selector,
-      i; // the node index
-  for (i = 0; i < m; ++i) selectedNodes.push(nodes[i].querySelector(s));
-  // XXX eo_transform_node_stack?
-  eo_transform_actions(this.actions, selectedNodes, data);
+      i, // the node index
+      o, // current node
+      c; // current child
+  for (i = 0; i < m; ++i) {
+    selectedNodes.push(c = Object.create(o = nodes[i]));
+    c.node = (c.parentNode = o.node).querySelector(s);
+  }
+  eo_transform_actions(this.actions, selectedNodes);
 }
-function eo_transform_select_all(nodes, data) {
+function eo_transform_select_all(nodes) {
   var m = nodes.length,
       s = this.selector,
       i, // the node index
-      o; // the current node
+      o, // the current node
+      p; // the current node
   eo_transform_stack.unshift(null);
-  eo_transform_node_stack.unshift(null);
   for (i = 0; i < m; ++i) {
-    eo_transform_stack[1] = data[i];
-    eo_transform_node_stack[0] = o = nodes[i];
-    eo_transform_actions(this.actions, o.querySelectorAll(s), data);
+    eo_transform_stack[1] = (o = nodes[i]).data;
+    eo_transform_actions(this.actions, eo_transform_nodes((p = o.node).querySelectorAll(s), p));
   }
   eo_transform_stack.shift();
-  eo_transform_node_stack.shift();
 }
-function eo_transform_style(nodes, data) {
+
+function eo_transform_nodes(x, p) {
+  var nodes = [],
+      i = 0,
+      n = x.length;
+  nodes.parentNode = p;
+  for (; i < n; i++) nodes.push({node: x[i], index: i});
+  return nodes;
+}
+function eo_transform_style(nodes) {
   var m = nodes.length,
       n = this.name,
       v = this.value,
@@ -373,24 +404,24 @@ function eo_transform_style(nodes, data) {
       x; // current value (for value functions)
   if (v == null) {
     for (i = 0; i < m; ++i) {
-      nodes[i].style.removeProperty(n);
+      nodes[i].node.style.removeProperty(n);
     }
   } else if (typeof v == "function") {
     for (i = 0; i < m; ++i) {
-      eo_transform_stack[0] = data[i];
       o = nodes[i];
+      eo_transform_stack[0] = o.data;
       x = v.apply(null, eo_transform_stack);
       x == null
-          ? o.style.removeProperty(n)
-          : o.style.setProperty(n, x, p);
+          ? o.node.style.removeProperty(n)
+          : o.node.style.setProperty(n, x, p);
     }
   } else {
     for (i = 0; i < m; ++i) {
-      nodes[i].style.setProperty(n, v, p);
+      nodes[i].node.style.setProperty(n, v, p);
     }
   }
 }
-function eo_transform_text(nodes, data) {
+function eo_transform_text(nodes) {
   var m = nodes.length,
       v = this.value,
       i, // current node index
@@ -398,15 +429,16 @@ function eo_transform_text(nodes, data) {
       x; // current value (for value functions)
   if (typeof v == "function") {
     for (i = 0; i < m; ++i) {
-      eo_transform_stack[0] = data[i];
-      x = v.apply(null, eo_transform_stack);
       o = nodes[i];
+      eo_transform_stack[0] = o.data;
+      x = v.apply(null, eo_transform_stack);
+      o = o.node;
       while (o.lastChild) o.removeChild(o.lastChild);
       o.appendChild(document.createTextNode(x));
     }
   } else {
     for (i = 0; i < m; ++i) {
-      o = nodes[i];
+      o = nodes[i].node;
       while (o.lastChild) o.removeChild(o.lastChild);
       o.appendChild(document.createTextNode(v));
     }

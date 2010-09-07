@@ -11,11 +11,8 @@ function eo_transform_data(nodes) {
       d, // current datum
       o, // current node
       enterNodes = [],
-      enterData = [],
       updateNodes = [],
-      updateData = [],
       exitNodes = [],
-      exitData = [],
       nodesByKey, // map key -> node
       dataByKey; // map key -> data
 
@@ -32,19 +29,24 @@ function eo_transform_data(nodes) {
     kv = key.value;
     nodesByKey = {};
     dataByKey = {};
+    indexesByKey = {};
 
     // compute map from key -> node
     if (kn.local) {
       for (i = 0; i < m; ++i) {
-        o = nodes[i];
-        k = o.getAttributeNS(kn.space, kn.local);
-        if (k != null) nodesByKey[k] = o;
+        o = nodes[i].node;
+        if (o) {
+          k = o.getAttributeNS(kn.space, kn.local);
+          if (k != null) nodesByKey[k] = o;
+        }
       }
     } else {
       for (i = 0; i < m; ++i) {
-        o = nodes[i];
-        k = o.getAttribute(kn);
-        if (k != null) nodesByKey[k] = o;
+        o = nodes[i].node;
+        if (o) {
+          k = o.getAttribute(kn);
+          if (k != null) nodesByKey[k] = o;
+        }
       }
     }
 
@@ -52,26 +54,37 @@ function eo_transform_data(nodes) {
     for (i = 0; i < n; ++i) {
       eo_transform_stack[0] = d = data[i];
       k = kv.apply(null, eo_transform_stack);
-      if (k != null) dataByKey[k] = d;
+      if (k != null) {
+        dataByKey[k] = d;
+        indexesByKey[k] = i;
+      }
     }
 
     // compute entering and updating nodes
     for (k in dataByKey) {
       d = dataByKey[k];
-      if (k in nodesByKey) {
-        updateNodes.push(nodesByKey[k]);
-        updateData.push(d);
+      i = indexesByKey[k];
+      if (o = nodesByKey[k]) {
+        updateNodes.push({
+          node: o,
+          data: d,
+          key: k,
+          index: i
+        });
       } else {
-        enterNodes.push(eo_transform_node_stack[0]);
-        enterData.push(d);
+        enterNodes.push({
+          node: nodes.parentNode,
+          data: d,
+          key: k,
+          index: i
+        });
       }
     }
 
     // compute exiting nodes
     for (k in nodesByKey) {
       if (!(k in dataByKey)) {
-        exitNodes.push(nodesByKey[k]);
-        exitData.push(null);
+        exitNodes.push({node: nodesByKey[k]});
       }
     }
   } else {
@@ -79,24 +92,31 @@ function eo_transform_data(nodes) {
 
     // compute updating nodes
     for (i = 0; i < k; ++i) {
-      updateNodes.push(nodes[i]);
-      updateData.push(data[i]);
+      (o = nodes[i]).data = data[i];
+      if (o.node) {
+        updateNodes.push(o);
+      } else {
+        o.node = o.parentNode;
+        enterNodes.push(o);
+      }
     }
 
     // compute entering nodes
     for (j = i; j < n; ++j) {
-      enterNodes.push(eo_transform_node_stack[0]);
-      enterData.push(data[j]);
+      enterNodes.push({
+        node: nodes.parentNode,
+        data: data[j],
+        index: j
+      });
     }
 
     // compute exiting nodes
     for (j = i; j < m; ++j) {
       exitNodes.push(nodes[j]);
-      exitData.push(null);
     }
   }
 
-  eo_transform_actions(this.enterActions, enterNodes, enterData);
-  eo_transform_actions(this.actions, updateNodes, updateData);
-  eo_transform_actions(this.exitActions, exitNodes, exitData);
+  eo_transform_actions(this.enterActions, enterNodes);
+  eo_transform_actions(this.actions, updateNodes);
+  eo_transform_actions(this.exitActions, exitNodes);
 }

@@ -1,5 +1,4 @@
 var eo_transform_stack = [],
-    eo_transform_node_stack = [],
     eo_transform_empty = [];
 
 eo.transform = function() {
@@ -109,7 +108,7 @@ eo.transform = function() {
 
   transform.apply = function() {
     eo_transform_stack.unshift(null);
-    eo_transform_actions(actions, [document], eo_transform_empty);
+    eo_transform_actions(actions, [{node: document, index: 0}]);
     eo_transform_stack.shift();
     return transform;
   };

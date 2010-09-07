@@ -1,17 +1,20 @@
-function eo_transform_add(nodes, data) {
+function eo_transform_add(nodes) {
   var m = nodes.length,
       n = this.name,
       childNodes = [],
-      i; // current index
+      i, // current index
+      o, // current node
+      c; // current child
   if (n.local) {
     for (i = 0; i < m; ++i) {
-      childNodes.push(nodes[i].appendChild(document.createElementNS(n.space, n.local)));
+      childNodes.push(c = Object.create(o = nodes[i]));
+      c.node = (c.parentNode = o.node).appendChild(document.createElementNS(n.space, n.local));
     }
   } else {
     for (i = 0; i < m; ++i) {
-      childNodes.push(nodes[i].appendChild(document.createElement(n)));
+      childNodes.push(c = Object.create(o = nodes[i]));
+      c.node = (c.parentNode = o.node).appendChild(document.createElement(n));
     }
   }
-  // XXX eo_transform_node_stack?
-  eo_transform_actions(this.actions, childNodes, data);
+  eo_transform_actions(this.actions, childNodes);
 }
