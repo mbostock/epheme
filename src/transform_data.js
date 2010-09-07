@@ -14,7 +14,8 @@ function eo_transform_data(nodes) {
       updateNodes = [],
       exitNodes = [],
       nodesByKey, // map key -> node
-      dataByKey; // map key -> data
+      dataByKey, // map key -> data
+      indexesByKey; // map key -> index
 
   if (typeof data == "function") {
     d = eo_transform_stack.shift();

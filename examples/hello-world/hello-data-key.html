@@ -18,8 +18,7 @@ var i = 0, data = [
   {id: i++, value: 42}
 ];
 
-var t = eo.transform()
-  .selectAll("span")
+var t = eo.selectAll("span")
     .data(data)
     .key("id", function(d) { return "span-" + d.id; });
 

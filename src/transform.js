@@ -1,7 +1,6 @@
-var eo_transform_stack = [],
-    eo_transform_empty = [];
+var eo_transform_stack = [];
 
-eo.transform = function() {
+function eo_transform() {
   var transform = {},
       actions = [];
 
@@ -114,4 +113,12 @@ eo.transform = function() {
   };
 
   return transform_scope(actions);
+}
+
+eo.select = function(s) {
+  return eo_transform().select(s);
+};
+
+eo.selectAll = function(s) {
+  return eo_transform().selectAll(s);
 };

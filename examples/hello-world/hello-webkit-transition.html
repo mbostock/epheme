@@ -43,8 +43,7 @@ var eo = org.epheme;
 
 var n = 10;
 
-eo.transform()
-  .select("#cells")
+eo.select("#cells")
   .selectAll("div")
     .data(range(n))
   .enter.add("div")
@@ -52,8 +51,7 @@ eo.transform()
     .style("left", function(i) { return i * 30; })
   .apply();
 
-window.addEventListener("keypress", eo.transform()
-  .selectAll(".cell")
+window.addEventListener("keypress", eo.selectAll(".cell")
     .data(function() { return range(n).map(Math.random); })
     .style("top", function(d) { return (1 - d) * 300; })
     .style("background-color", function(d) { return "rgb(" + ~~(d * 255) + ",50,100)"; })

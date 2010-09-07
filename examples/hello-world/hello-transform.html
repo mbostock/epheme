@@ -14,8 +14,7 @@
 
 var eo = org.epheme;
 
-eo.transform()
-  .selectAll("span")
+eo.selectAll("span")
   .add("svg:svg")
     .attr("width", 100)
     .attr("height", 100)
@@ -32,8 +31,7 @@ eo.transform()
     .text(function() { return ~~(Math.random() * 100); })
   .apply();
 
-window.addEventListener("keypress", eo.transform()
-    .selectAll("text")
+window.addEventListener("keypress", eo.selectAll("text")
     .text(function() { return ~~(Math.random() * 100); })
     .apply, false);
 

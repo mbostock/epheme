@@ -29,10 +29,9 @@ var ns = {
   }
 
 };
-var eo_transform_stack = [],
-    eo_transform_empty = [];
+var eo_transform_stack = [];
 
-eo.transform = function() {
+function eo_transform() {
   var transform = {},
       actions = [];
 
@@ -145,6 +144,14 @@ eo.transform = function() {
   };
 
   return transform_scope(actions);
+}
+
+eo.select = function(s) {
+  return eo_transform().select(s);
+};
+
+eo.selectAll = function(s) {
+  return eo_transform().selectAll(s);
 };
 function eo_transform_actions(actions, nodes) {
   var n = actions.length,
@@ -230,7 +237,8 @@ function eo_transform_data(nodes) {
       updateNodes = [],
       exitNodes = [],
       nodesByKey, // map key -> node
-      dataByKey; // map key -> data
+      dataByKey, // map key -> data
+      indexesByKey; // map key -> index
 
   if (typeof data == "function") {
     d = eo_transform_stack.shift();
