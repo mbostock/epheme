@@ -64,6 +64,10 @@ eo.transition = function() {
     return transition;
   };
 
+  transition.time = function() {
+    return t;
+  };
+
   transition.stop = function() {
     if (timer) timer = clearTimeout(timer);
     if (interval) interval = clearInterval(interval);

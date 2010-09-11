@@ -1,0 +1,124 @@
+<html>
+  <head>
+    <title>Pie Chart</title>
+    <script type="text/javascript" src="../../epheme.js"></script>
+    <style type="text/css">
+
+body {
+  font: 10px sans-serif;
+}
+
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript">
+
+var eo = org.epheme;
+
+var data = normalize(range(10).map(Math.random).sort(descending)),
+    w = 400,
+    h = 400,
+    r = Math.min(w, h) / 2;
+
+var colors = [
+  "#1f77b4", "#aec7e8", "#ff7f0e", "#ffbb78", "#2ca02c",
+  "#98df8a", "#d62728", "#ff9896", "#9467bd", "#c5b0d5",
+  "#8c564b", "#c49c94", "#e377c2", "#f7b6d2", "#7f7f7f",
+  "#c7c7c7", "#bcbd22", "#dbdb8d", "#17becf", "#9edae5"
+];
+
+var vis = eo.select("body")
+  .add("svg:svg")
+    .attr("width", w)
+    .attr("height", h);
+
+var arcs = vis.selectAll("g.arc")
+    .data(data)
+  .enter.add("svg:g")
+    .attr("class", "arc")
+    .attr("transform", "translate(" + r + "," + r + ")");
+
+arcs.add("svg:path")
+    .attr("fill", index(colors));
+
+arcs.add("svg:text")
+    .attr("dy", ".35em")
+    .attr("text-anchor", "middle")
+    .text(function(d) { return d.value.toFixed(2); });
+
+vis.apply();
+
+var tx = eo.transition()
+    .ease("bounce")
+    .duration(2000);
+
+tx.on("tick", eo.selectAll("g.arc")
+    .data(data)
+  .select("path")
+    .attr("d", arc(r))
+    .end
+  .select("text")
+    .attr("transform", function(d) {
+      var a = tx.time() * d.midAngle - Math.PI / 2,
+          t = "rotate(" + a * 180 / Math.PI + ")translate(" + r * .8 + ",0)";
+      return upright(a) ? t : t + "rotate(180)";
+    })
+    .apply);
+
+tx.start();
+
+function range(n) {
+  var array = [];
+  for (var i = 0; i < n; i++) array.push(i);
+  return array;
+}
+
+function normalize(array) {
+  var k = (2 * Math.PI) / array.reduce(function(p, d) { return p + d; }, 0),
+      a = 0;
+  return array.map(function(d, i) {
+    return {
+      startAngle: a,
+      midAngle: a + d * k / 2,
+      endAngle: a += d * k,
+      index: i,
+      value: d
+    };
+  });
+}
+
+function arc(r) {
+  return function(d) {
+    var t = tx.time(),
+        a0 = t * d.startAngle - Math.PI / 2,
+        a1 = t * d.endAngle - Math.PI / 2;
+    return "M" + r * Math.cos(a0) + "," + r * Math.sin(a0)
+        + "A" + r + "," + r + " 0 "
+        + ((a1 - a0 < Math.PI) ? "0" : "1") + ",1 "
+        + r * Math.cos(a1) + "," + r * Math.sin(a1) + "L0,0Z";
+  };
+}
+
+function index(colors) {
+  return function(d) {
+    return colors[d.index % colors.length];
+  };
+}
+
+function upright(a) {
+  a = a % (2 * Math.PI);
+  a = a < 0 ? 2 * Math.PI + a : a;
+  return a < Math.PI / 2 || a >= 3 * Math.PI / 2;
+}
+
+function ascending(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+function descending(a, b) {
+  return a < b ? 1 : a > b ? -1 : 0;
+}
+
+    </script>
+  </body>
+</html>
