@@ -1,5 +1,5 @@
 JS_COMPILER = \
-	java -jar /Library/Google/Compiler/compiler-20100201.jar \
+	java -jar /Library/Google/Compiler/compiler-20100616.jar \
 	--warning_level=VERBOSE \
 	--charset UTF-8
 
@@ -7,6 +7,10 @@ SRC_FILES = \
 	src/object.js \
 	src/start.js \
 	src/ns.js \
+	src/dispatch.js \
+	src/ease.js \
+	src/interpolate.js \
+	src/rgb.js \
 	src/transform.js \
 	src/transform_actions.js \
 	src/transform_add.js \
@@ -18,12 +22,8 @@ SRC_FILES = \
 	src/transform_select_all.js \
 	src/transform_style.js \
 	src/transform_text.js \
+	src/transition.js \
 	src/end.js
-
-# TODO
-# 	src/dispatch.js \
-# 	src/ease.js \
-# 	src/transition.js \
 
 all: epheme.js epheme.min.js
 

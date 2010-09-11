@@ -29,6 +29,431 @@ var ns = {
   }
 
 };
+function eo_dispatch(that) {
+  var types = {};
+
+  that.on = function(type, handler) {
+    var listeners = types[type] || (types[type] = []);
+    for (var i = 0; i < listeners.length; i++) {
+      if (listeners[i].handler == handler) return this; // already registered
+    }
+    listeners.push({handler: handler, on: true});
+    return this;
+  };
+
+  that.off = function(type, handler) {
+    var listeners = types[type];
+    if (listeners) for (var i = 0; i < listeners.length; i++) {
+      var l = listeners[i];
+      if (l.handler == handler) {
+        l.on = false;
+        listeners.splice(i, 1);
+        break;
+      }
+    }
+    return this;
+  };
+
+  that.dispatch = function(event) {
+    var listeners = types[event.type];
+    if (!listeners) return;
+    listeners = listeners.slice(); // defensive copy
+    for (var i = 0; i < listeners.length; i++) {
+      var l = listeners[i];
+      if (l.on) l.handler.call(that, event);
+    }
+  };
+
+  return that;
+}
+/*
+ * TERMS OF USE - EASING EQUATIONS
+ *
+ * Open source under the BSD License.
+ *
+ * Copyright 2001 Robert Penner
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * - Neither the name of the author nor the names of contributors may be used to
+ *   endorse or promote products derived from this software without specific
+ *   prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+var quad = poly(2),
+    cubic = poly(3);
+
+var ease = {
+  "linear": function() { return linear; },
+  "poly": poly,
+  "quad": function() { return quad; },
+  "cubic": function() { return cubic; },
+  "sin": function() { return sin; },
+  "exp": function() { return exp; },
+  "circle": function() { return circle; },
+  "elastic": elastic,
+  "back": back,
+  "bounce": function() { return bounce; }
+};
+
+var mode = {
+  "in": function(f) { return f; },
+  "out": reverse,
+  "in-out": reflect,
+  "out-int": function(f) { return reflect(reverse(f)); }
+};
+
+eo.ease = function(name) {
+  var i = name.indexOf("-"),
+      t = i >= 0 ? name.substring(0, i) : name,
+      m = i >= 0 ? name.substring(i + 1) : "in";
+  return mode[m](ease[t].apply(null, Array.prototype.slice.call(arguments, 1)));
+};
+
+function reverse(f) {
+  return function(t) {
+    return 1 - f(1 - t);
+  };
+}
+
+function reflect(f) {
+  return function(t) {
+    return .5 * (t < .5 ? f(2 * t) : (2 - f(2 - 2 * t)));
+  };
+}
+
+function linear(t) {
+  return t;
+}
+
+function poly(e) {
+  return function(t) {
+    return Math.pow(t, e);
+  }
+}
+
+function sin(t) {
+  return 1 - Math.cos(t * Math.PI / 2);
+}
+
+function exp(t) {
+  return t ? Math.pow(2, 10 * (t - 1)) - 1e-3 : 0;
+}
+
+function circle(t) {
+  return 1 - Math.sqrt(1 - t * t);
+}
+
+function elastic(a, p) {
+  var s;
+  if (arguments.length < 2) p = 0.45;
+  if (arguments.length < 1) { a = 1; s = p / 4; }
+  else s = p / (2 * Math.PI) * Math.asin(1 / a);
+  return function(t) {
+    return 1 + a * Math.pow(2, 10 * -t) * Math.sin(-(t + s) * 2 * Math.PI / p);
+  };
+}
+
+function back(s) {
+  if (!s) s = 1.70158;
+  return function(t) {
+    return t * t * ((s + 1) * t - s);
+  };
+}
+
+function bounce(t) {
+  return t < 1 / 2.75 ? 7.5625 * t * t
+      : t < 2 / 2.75 ? 7.5625 * (t -= 1.5 / 2.75) * t + .75
+      : t < 2.5 / 2.75 ? 7.5625 * (t -= 2.25 / 2.75) * t + .9375
+      : 7.5625 * (t -= 2.625 / 2.75) * t + .984375;
+}
+eo.interpolate = function(a, b) {
+  if (typeof a != "number" || typeof b != "number") {
+    var u = eo_interpolate_digits.exec(a);
+    a = parseFloat(a);
+    b = parseFloat(b);
+    if (u) {
+      u = u[1];
+      return function(t) {
+        return a * (1 - t) + b * t + u;
+      };
+    }
+  }
+  return function(t) {
+    return a * (1 - t) + b * t;
+  };
+};
+
+eo.interpolateRgb = function(a, b) {
+  a = eo.rgb(a);
+  b = eo.rgb(b);
+  return function(t) {
+    var _t = 1 - t;
+    return "rgb(" + Math.round(a.r * _t + b.r * t)
+        + "," + Math.round(a.g * _t + b.g * t)
+        + "," + Math.round(a.b * _t + b.b * t)
+        + ")";
+  };
+};
+
+var eo_interpolate_digits = /[-+]?\d*\.?\d*(?:[eE]\d+)?(.*)/;
+eo.rgb = function(format) {
+  var r, // red channel; int in [0, 255]
+      g, // green channel; int in [0, 255]
+      b, // blue channel; int in [0, 255]
+      m1, // CSS color specification match
+      m2, // CSS color specification type (e.g., rgb)
+      name;
+
+  /* Handle hsl, rgb. */
+  m1 = /([a-z]+)\((.*)\)/i.exec(format);
+  if (m1) {
+    m2 = m1[2].split(",");
+    switch (m1[1]) {
+      case "hsl": {
+        return eo_rgb_hsl(
+          parseFloat(m2[0]), // degrees
+          parseFloat(m2[1]) / 100, // percentage
+          parseFloat(m2[2]) / 100); // percentage
+      }
+      case "rgb": {
+        return {
+          r: eo_rgb_parse(m2[0]),
+          g: eo_rgb_parse(m2[1]),
+          b: eo_rgb_parse(m2[2])
+        };
+      }
+    }
+  }
+
+  /* Named colors. */
+  if (name = eo_rgb_names[format]) return name;
+
+  /* Hexadecimal colors: #rgb and #rrggbb. */
+  if (format.charAt(0) == "#") {
+    if (format.length == 4) {
+      r = format.charAt(1); r += r;
+      g = format.charAt(2); g += g;
+      b = format.charAt(3); b += b;
+    } else if (format.length == 7) {
+      r = format.substring(1, 3);
+      g = format.substring(3, 5);
+      b = format.substring(5, 7);
+    }
+    r = parseInt(r, 16);
+    g = parseInt(g, 16);
+    b = parseInt(b, 16);
+  }
+
+  return {r: r, g: g, b: b};
+};
+
+function eo_rgb_hsl(h, s, l) {
+  var m1,
+      m2;
+
+  /* Some simple corrections for h, s and l. */
+  h = h % 360; if (h < 0) h += 360;
+  s = s < 0 ? 0 : s > 1 ? 1 : s;
+  l = l < 0 ? 0 : l > 1 ? 1 : l;
+
+  /* From FvD 13.37, CSS Color Module Level 3 */
+  m2 = l <= .5 ? l * (1 + s) : l + s - l * s;
+  m1 = 2 * l - m2;
+
+  function v(h) {
+    if (h > 360) h -= 360;
+    else if (h < 0) h += 360;
+    if (h < 60) return m1 + (m2 - m1) * h / 60;
+    if (h < 180) return m2;
+    if (h < 240) return m1 + (m2 - m1) * (240 - h) / 60;
+    return m1;
+  }
+
+  function vv(h) {
+    return Math.round(v(h) * 255);
+  }
+
+  return {r: vv(h + 120), g: vv(h), b: vv(h - 120)};
+}
+
+function eo_rgb_parse(c) { // either integer or percentage
+  var f = parseFloat(c);
+  return c.charAt(c.length - 1) == "%" ? Math.round(f * 2.55) : f;
+}
+
+var eo_rgb_names = {
+  aliceblue: "#f0f8ff",
+  antiquewhite: "#faebd7",
+  aqua: "#00ffff",
+  aquamarine: "#7fffd4",
+  azure: "#f0ffff",
+  beige: "#f5f5dc",
+  bisque: "#ffe4c4",
+  black: "#000000",
+  blanchedalmond: "#ffebcd",
+  blue: "#0000ff",
+  blueviolet: "#8a2be2",
+  brown: "#a52a2a",
+  burlywood: "#deb887",
+  cadetblue: "#5f9ea0",
+  chartreuse: "#7fff00",
+  chocolate: "#d2691e",
+  coral: "#ff7f50",
+  cornflowerblue: "#6495ed",
+  cornsilk: "#fff8dc",
+  crimson: "#dc143c",
+  cyan: "#00ffff",
+  darkblue: "#00008b",
+  darkcyan: "#008b8b",
+  darkgoldenrod: "#b8860b",
+  darkgray: "#a9a9a9",
+  darkgreen: "#006400",
+  darkgrey: "#a9a9a9",
+  darkkhaki: "#bdb76b",
+  darkmagenta: "#8b008b",
+  darkolivegreen: "#556b2f",
+  darkorange: "#ff8c00",
+  darkorchid: "#9932cc",
+  darkred: "#8b0000",
+  darksalmon: "#e9967a",
+  darkseagreen: "#8fbc8f",
+  darkslateblue: "#483d8b",
+  darkslategray: "#2f4f4f",
+  darkslategrey: "#2f4f4f",
+  darkturquoise: "#00ced1",
+  darkviolet: "#9400d3",
+  deeppink: "#ff1493",
+  deepskyblue: "#00bfff",
+  dimgray: "#696969",
+  dimgrey: "#696969",
+  dodgerblue: "#1e90ff",
+  firebrick: "#b22222",
+  floralwhite: "#fffaf0",
+  forestgreen: "#228b22",
+  fuchsia: "#ff00ff",
+  gainsboro: "#dcdcdc",
+  ghostwhite: "#f8f8ff",
+  gold: "#ffd700",
+  goldenrod: "#daa520",
+  gray: "#808080",
+  green: "#008000",
+  greenyellow: "#adff2f",
+  grey: "#808080",
+  honeydew: "#f0fff0",
+  hotpink: "#ff69b4",
+  indianred: "#cd5c5c",
+  indigo: "#4b0082",
+  ivory: "#fffff0",
+  khaki: "#f0e68c",
+  lavender: "#e6e6fa",
+  lavenderblush: "#fff0f5",
+  lawngreen: "#7cfc00",
+  lemonchiffon: "#fffacd",
+  lightblue: "#add8e6",
+  lightcoral: "#f08080",
+  lightcyan: "#e0ffff",
+  lightgoldenrodyellow: "#fafad2",
+  lightgray: "#d3d3d3",
+  lightgreen: "#90ee90",
+  lightgrey: "#d3d3d3",
+  lightpink: "#ffb6c1",
+  lightsalmon: "#ffa07a",
+  lightseagreen: "#20b2aa",
+  lightskyblue: "#87cefa",
+  lightslategray: "#778899",
+  lightslategrey: "#778899",
+  lightsteelblue: "#b0c4de",
+  lightyellow: "#ffffe0",
+  lime: "#00ff00",
+  limegreen: "#32cd32",
+  linen: "#faf0e6",
+  magenta: "#ff00ff",
+  maroon: "#800000",
+  mediumaquamarine: "#66cdaa",
+  mediumblue: "#0000cd",
+  mediumorchid: "#ba55d3",
+  mediumpurple: "#9370db",
+  mediumseagreen: "#3cb371",
+  mediumslateblue: "#7b68ee",
+  mediumspringgreen: "#00fa9a",
+  mediumturquoise: "#48d1cc",
+  mediumvioletred: "#c71585",
+  midnightblue: "#191970",
+  mintcream: "#f5fffa",
+  mistyrose: "#ffe4e1",
+  moccasin: "#ffe4b5",
+  navajowhite: "#ffdead",
+  navy: "#000080",
+  oldlace: "#fdf5e6",
+  olive: "#808000",
+  olivedrab: "#6b8e23",
+  orange: "#ffa500",
+  orangered: "#ff4500",
+  orchid: "#da70d6",
+  palegoldenrod: "#eee8aa",
+  palegreen: "#98fb98",
+  paleturquoise: "#afeeee",
+  palevioletred: "#db7093",
+  papayawhip: "#ffefd5",
+  peachpuff: "#ffdab9",
+  peru: "#cd853f",
+  pink: "#ffc0cb",
+  plum: "#dda0dd",
+  powderblue: "#b0e0e6",
+  purple: "#800080",
+  red: "#ff0000",
+  rosybrown: "#bc8f8f",
+  royalblue: "#4169e1",
+  saddlebrown: "#8b4513",
+  salmon: "#fa8072",
+  sandybrown: "#f4a460",
+  seagreen: "#2e8b57",
+  seashell: "#fff5ee",
+  sienna: "#a0522d",
+  silver: "#c0c0c0",
+  skyblue: "#87ceeb",
+  slateblue: "#6a5acd",
+  slategray: "#708090",
+  slategrey: "#708090",
+  snow: "#fffafa",
+  springgreen: "#00ff7f",
+  steelblue: "#4682b4",
+  tan: "#d2b48c",
+  teal: "#008080",
+  thistle: "#d8bfd8",
+  tomato: "#ff6347",
+  turquoise: "#40e0d0",
+  violet: "#ee82ee",
+  wheat: "#f5deb3",
+  white: "#ffffff",
+  whitesmoke: "#f5f5f5",
+  yellow: "#ffff00",
+  yellowgreen: "#9acd32"
+};
+
+for (var x in eo_rgb_names) eo_rgb_names[x] = eo.rgb(eo_rgb_names[x]);
 var eo_transform_stack = [];
 
 function eo_transform() {
@@ -480,4 +905,81 @@ function eo_transform_text(nodes) {
     }
   }
 }
+eo.transition = function() {
+  var transition = eo_dispatch({}),
+      rate = 24,
+      delay = 0,
+      duration = 250,
+      ease = eo.ease("cubic-in-out"),
+      timer,
+      interval,
+      then,
+      t;
+
+  function start() {
+    then = Date.now();
+    t = 0;
+    transition.dispatch({type: "start"});
+    transition.dispatch({type: "tick"});
+    interval = setInterval(tick, rate);
+    timer = 0;
+  }
+
+  function tick() {
+    var td = (Date.now() - then) / duration;
+    if (td >= 1) return end();
+    t = ease(td);
+    transition.dispatch({type: "tick"});
+  }
+
+  function end() {
+    interval = clearInterval(interval);
+    t = 1;
+    transition.dispatch({type: "tick"});
+    transition.dispatch({type: "end"});
+  }
+
+  transition.ease = function(x) {
+    if (!arguments.length) return ease;
+    ease = typeof x == "string" ? eo.ease(x) : x;
+    return transition;
+  };
+
+  transition.delay = function(x) {
+    if (!arguments.length) return delay;
+    delay = x;
+    if (timer) {
+      clearInterval(timer);
+      timer = setTimeout(start, delay);
+    }
+    return transition;
+  };
+
+  transition.duration = function(x) {
+    if (!arguments.length) return duration;
+    duration = x;
+    return transition;
+  };
+
+  transition.start = function() {
+    if (timer || interval) return transition;
+    if (delay) timer = setTimeout(start, delay);
+    else start();
+    return transition;
+  };
+
+  transition.stop = function() {
+    if (timer) timer = clearTimeout(timer);
+    if (interval) interval = clearInterval(interval);
+    return transition;
+  };
+
+  transition.bind = function(f) {
+    return function() {
+      return f(t);
+    };
+  };
+
+  return transition;
+};
 })(this);
