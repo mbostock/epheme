@@ -9,6 +9,9 @@ eo.transition = function() {
       then,
       t;
 
+  // TODO
+  // per-element delay would be great
+
   function start() {
     then = Date.now();
     t = 0;

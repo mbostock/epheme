@@ -460,18 +460,15 @@ function eo_transform() {
   var transform = {},
       actions = [];
 
-  // TODO transitions:
-  // duration, delay, etc.
-  // per-element delay would be great
-  // are transitions scoped, or global?
-
-  // TODO api uncertainty:
+  // TODO
   // convenience method for replacing elements?
   // how to insert new element at a given location?
   // how to move elements around, sort, reverse or reorder?
 
-  function transform_scope(actions) {
+  function transform_scope(parent, actions) {
     var scope = Object.create(transform);
+
+    scope.end = parent;
 
     scope.data = function(v) {
       var subscope, action = {
@@ -482,9 +479,9 @@ function eo_transform() {
         exitActions: []
       };
       actions.push(action);
-      subscope = transform_scope(action.actions);
-      subscope.enter = transform_scope(action.enterActions);
-      subscope.exit = transform_scope(action.exitActions);
+      subscope = transform_scope(scope, action.actions);
+      subscope.enter = transform_scope(scope, action.enterActions);
+      subscope.exit = transform_scope(scope, action.exitActions);
       subscope.key = function(n, v) {
         action.key = {name: ns.qualify(n), value: v};
         return subscope;
@@ -519,7 +516,7 @@ function eo_transform() {
         actions: []
       };
       actions.push(action);
-      return transform_scope(action.actions);
+      return transform_scope(scope, action.actions);
     };
 
     scope.remove = function(s) {
@@ -538,6 +535,16 @@ function eo_transform() {
       return scope;
     };
 
+    scope.on = function(t) {
+      var action = {
+        impl: eo_transform_on,
+        type: t,
+        actions: []
+      };
+      actions.push(action);
+      return transform_scope(scope, action.actions);
+    };
+
     scope.filter = function(f) {
       var action = {
         impl: eo_transform_filter,
@@ -545,7 +552,7 @@ function eo_transform() {
         actions: []
       };
       actions.push(action);
-      return transform_scope(action.actions);
+      return transform_scope(scope, action.actions);
     };
 
     scope.select = function(s) {
@@ -555,7 +562,7 @@ function eo_transform() {
         actions: []
       };
       actions.push(action);
-      return transform_scope(action.actions);
+      return transform_scope(scope, action.actions);
     };
 
     scope.selectAll = function(s) {
@@ -565,7 +572,7 @@ function eo_transform() {
         actions: []
       };
       actions.push(action);
-      return transform_scope(action.actions);
+      return transform_scope(scope, action.actions);
     };
 
     return scope;
@@ -578,7 +585,7 @@ function eo_transform() {
     return transform;
   };
 
-  return transform_scope(actions);
+  return transform_scope(null, actions);
 }
 
 eo.select = function(s) {
@@ -802,6 +809,38 @@ function eo_transform_remove(nodes) {
     }
   }
 }
+function eo_transform_on(nodes) {
+  var actions = this.actions,
+      n = actions.length,
+      m = nodes.length,
+      t = "on" + this.type,
+      i = 0, // current index
+      o, // curent node
+      stack = eo_transform_stack.slice(); // stack snapshot
+
+  if (n) {
+    for (; i < m; ++i) {
+      o = nodes[i];
+      o.node[t] = bind([o]);
+    }
+  } else {
+    for (; i < m; ++i) {
+      nodes[i].node[t] = null;
+    }
+  }
+
+  function bind(o) {
+    return function(e) {
+      var s = eo_transform_stack;
+      try {
+        eo_transform_stack = stack;
+        for (i = 0; i < n; ++i) actions[i].impl(o);
+      } finally {
+        eo_transform_stack = s;
+      }
+    };
+  }
+}
 function eo_transform_filter(nodes) {
   var filteredNodes = [],
       m = nodes.length,
@@ -915,6 +954,9 @@ eo.transition = function() {
       interval,
       then,
       t;
+
+  // TODO
+  // per-element delay would be great
 
   function start() {
     then = Date.now();

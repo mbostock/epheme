@@ -1,7 +1,8 @@
 JS_COMPILER = \
 	java -jar /Library/Google/Compiler/compiler-20100616.jar \
+	--externs=src/externs.js \
 	--warning_level=VERBOSE \
-	--charset UTF-8
+	--charset=UTF-8
 
 SRC_FILES = \
 	src/object.js \
@@ -17,6 +18,7 @@ SRC_FILES = \
 	src/transform_attr.js \
 	src/transform_data.js \
 	src/transform_remove.js \
+	src/transform_on.js \
 	src/transform_filter.js \
 	src/transform_select.js \
 	src/transform_select_all.js \
@@ -27,7 +29,7 @@ SRC_FILES = \
 
 all: epheme.js epheme.min.js
 
-epheme.min.js: epheme.js Makefile
+epheme.min.js: epheme.js Makefile src/externs.js
 	rm -f $@
 	$(JS_COMPILER) < epheme.js >> $@
 
