@@ -35,10 +35,10 @@ function eo_dispatch(that) {
   that.on = function(type, handler) {
     var listeners = types[type] || (types[type] = []);
     for (var i = 0; i < listeners.length; i++) {
-      if (listeners[i].handler == handler) return this; // already registered
+      if (listeners[i].handler == handler) return that; // already registered
     }
     listeners.push({handler: handler, on: true});
-    return this;
+    return that;
   };
 
   that.off = function(type, handler) {
@@ -51,7 +51,7 @@ function eo_dispatch(that) {
         break;
       }
     }
-    return this;
+    return that;
   };
 
   that.dispatch = function(event) {
@@ -195,12 +195,14 @@ eo.interpolate = function(a, b) {
     b = parseFloat(b);
     if (u) {
       u = u[1];
-      return function(t) {
+      return function() {
+        var t = eo.time;
         return a * (1 - t) + b * t + u;
       };
     }
   }
-  return function(t) {
+  return function() {
+    var t = eo.time;
     return a * (1 - t) + b * t;
   };
 };
@@ -208,11 +210,12 @@ eo.interpolate = function(a, b) {
 eo.interpolateRgb = function(a, b) {
   a = eo.rgb(a);
   b = eo.rgb(b);
-  return function(t) {
-    var _t = 1 - t;
-    return "rgb(" + Math.round(a.r * _t + b.r * t)
-        + "," + Math.round(a.g * _t + b.g * t)
-        + "," + Math.round(a.b * _t + b.b * t)
+  return function() {
+    var t = eo.time,
+        q = 1 - t;
+    return "rgb(" + Math.round(a.r * q + b.r * t)
+        + "," + Math.round(a.g * q + b.g * t)
+        + "," + Math.round(a.b * q + b.b * t)
         + ")";
   };
 };
@@ -578,6 +581,26 @@ function eo_transform() {
     return scope;
   }
 
+  transform.select = function(s) {
+    var action = {
+      impl: eo_transform_select,
+      selector: s,
+      actions: []
+    };
+    actions.push(action);
+    return transform_scope(transform, action.actions);
+  };
+
+  transform.selectAll = function(s) {
+    var action = {
+      impl: eo_transform_select_all,
+      selector: s,
+      actions: []
+    };
+    actions.push(action);
+    return transform_scope(transform, action.actions);
+  };
+
   transform.apply = function() {
     eo_transform_stack.unshift(null);
     eo_transform_actions(actions, [{node: document, index: 0}]);
@@ -585,7 +608,7 @@ function eo_transform() {
     return transform;
   };
 
-  return transform_scope(null, actions);
+  return transform;
 }
 
 eo.select = function(s) {
@@ -834,8 +857,10 @@ function eo_transform_on(nodes) {
       var s = eo_transform_stack;
       try {
         eo_transform_stack = stack;
+        eo.event = e;
         for (i = 0; i < n; ++i) actions[i].impl(o);
       } finally {
+        delete eo.event;
         eo_transform_stack = s;
       }
     };
@@ -945,39 +970,36 @@ function eo_transform_text(nodes) {
   }
 }
 eo.transition = function() {
-  var transition = eo_dispatch({}),
+  var transition = eo_dispatch(eo_transform()),
       rate = 24,
       delay = 0,
       duration = 250,
       ease = eo.ease("cubic-in-out"),
       timer,
       interval,
-      then,
-      t;
+      then;
 
   // TODO
   // per-element delay would be great
 
   function start() {
     then = Date.now();
-    t = 0;
     transition.dispatch({type: "start"});
-    transition.dispatch({type: "tick"});
+    tick();
     interval = setInterval(tick, rate);
     timer = 0;
   }
 
   function tick() {
     var td = (Date.now() - then) / duration;
-    if (td >= 1) return end();
-    t = ease(td);
-    transition.dispatch({type: "tick"});
+    eo.time = ease(td < 0 ? 0 : td > 1 ? 1 : td);
+    transition.apply();
+    delete eo.time;
+    if (td >= 1) end();
   }
 
   function end() {
     interval = clearInterval(interval);
-    t = 1;
-    transition.dispatch({type: "tick"});
     transition.dispatch({type: "end"});
   }
 
@@ -1010,20 +1032,10 @@ eo.transition = function() {
     return transition;
   };
 
-  transition.time = function() {
-    return t;
-  };
-
   transition.stop = function() {
     if (timer) timer = clearTimeout(timer);
     if (interval) interval = clearInterval(interval);
     return transition;
-  };
-
-  transition.bind = function(f) {
-    return function() {
-      return f(t);
-    };
   };
 
   return transition;

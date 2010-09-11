@@ -48,24 +48,23 @@ arcs.add("svg:text")
 
 vis.apply();
 
-var tx = eo.transition()
+var t = eo.transition()
     .ease("bounce")
-    .duration(2000);
-
-tx.on("tick", eo.selectAll("g.arc")
+    .duration(2000)
+  .selectAll("g.arc")
     .data(data)
   .select("path")
     .attr("d", arc(r))
     .end
   .select("text")
     .attr("transform", function(d) {
-      var a = tx.time() * d.midAngle - Math.PI / 2,
+      var a = eo.time * d.midAngle - Math.PI / 2,
           t = "rotate(" + a * 180 / Math.PI + ")translate(" + r * .8 + ",0)";
       return upright(a) ? t : t + "rotate(180)";
     })
-    .apply);
+  .start();
 
-tx.start();
+window.addEventListener("keypress", t.start, false);
 
 function range(n) {
   var array = [];
@@ -89,7 +88,7 @@ function normalize(array) {
 
 function arc(r) {
   return function(d) {
-    var t = tx.time(),
+    var t = eo.time,
         a0 = t * d.startAngle - Math.PI / 2,
         a1 = t * d.endAngle - Math.PI / 2;
     return "M" + r * Math.cos(a0) + "," + r * Math.sin(a0)

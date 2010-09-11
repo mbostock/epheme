@@ -29,14 +29,12 @@ var eo = org.epheme;
 
 var t = eo.transition()
     .ease("bounce")
-    .duration(2000);
-
-t.on("tick", eo.select("div")
-    .data(t.bind(function(t) { return [t * 100]; }))
-    .style("width", t.bind(eo.interpolate("0%", "100%")))
-    .style("background", t.bind(eo.interpolateRgb("steelblue", "brown")))
-    .text(function(d) { return ~~d + "\u00a0"; })
-    .apply);
+    .duration(2000)
+  .select("div")
+    .style("width", eo.interpolate("0%", "100%"))
+    .style("background", eo.interpolateRgb("steelblue", "brown"))
+    .text(function() { return ~~(eo.time * 100) + "\u00a0"; })
+  .start();
 
 window.addEventListener("keypress", t.start, false);
 

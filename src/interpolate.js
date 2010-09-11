@@ -5,12 +5,14 @@ eo.interpolate = function(a, b) {
     b = parseFloat(b);
     if (u) {
       u = u[1];
-      return function(t) {
+      return function() {
+        var t = eo.time;
         return a * (1 - t) + b * t + u;
       };
     }
   }
-  return function(t) {
+  return function() {
+    var t = eo.time;
     return a * (1 - t) + b * t;
   };
 };
@@ -18,11 +20,12 @@ eo.interpolate = function(a, b) {
 eo.interpolateRgb = function(a, b) {
   a = eo.rgb(a);
   b = eo.rgb(b);
-  return function(t) {
-    var _t = 1 - t;
-    return "rgb(" + Math.round(a.r * _t + b.r * t)
-        + "," + Math.round(a.g * _t + b.g * t)
-        + "," + Math.round(a.b * _t + b.b * t)
+  return function() {
+    var t = eo.time,
+        q = 1 - t;
+    return "rgb(" + Math.round(a.r * q + b.r * t)
+        + "," + Math.round(a.g * q + b.g * t)
+        + "," + Math.round(a.b * q + b.b * t)
         + ")";
   };
 };

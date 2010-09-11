@@ -122,6 +122,26 @@ function eo_transform() {
     return scope;
   }
 
+  transform.select = function(s) {
+    var action = {
+      impl: eo_transform_select,
+      selector: s,
+      actions: []
+    };
+    actions.push(action);
+    return transform_scope(transform, action.actions);
+  };
+
+  transform.selectAll = function(s) {
+    var action = {
+      impl: eo_transform_select_all,
+      selector: s,
+      actions: []
+    };
+    actions.push(action);
+    return transform_scope(transform, action.actions);
+  };
+
   transform.apply = function() {
     eo_transform_stack.unshift(null);
     eo_transform_actions(actions, [{node: document, index: 0}]);
@@ -129,7 +149,7 @@ function eo_transform() {
     return transform;
   };
 
-  return transform_scope(null, actions);
+  return transform;
 }
 
 eo.select = function(s) {

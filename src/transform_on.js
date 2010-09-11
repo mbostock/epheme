@@ -23,8 +23,10 @@ function eo_transform_on(nodes) {
       var s = eo_transform_stack;
       try {
         eo_transform_stack = stack;
+        eo.event = e;
         for (i = 0; i < n; ++i) actions[i].impl(o);
       } finally {
+        delete eo.event;
         eo_transform_stack = s;
       }
     };
