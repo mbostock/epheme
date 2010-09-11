@@ -82,6 +82,16 @@ function eo_transform() {
       return scope;
     };
 
+    scope.filter = function(f) {
+      var action = {
+        impl: eo_transform_filter,
+        filter: f,
+        actions: []
+      };
+      actions.push(action);
+      return transform_scope(action.actions);
+    };
+
     scope.select = function(s) {
       var action = {
         impl: eo_transform_select,

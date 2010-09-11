@@ -13,6 +13,7 @@ SRC_FILES = \
 	src/transform_attr.js \
 	src/transform_data.js \
 	src/transform_remove.js \
+	src/transform_filter.js \
 	src/transform_select.js \
 	src/transform_select_all.js \
 	src/transform_style.js \
@@ -36,4 +37,4 @@ epheme.js: $(SRC_FILES) Makefile
 	chmod a-w $@
 
 clean:
-	rm epheme.js epheme.min.js
+	rm -f epheme.js epheme.min.js

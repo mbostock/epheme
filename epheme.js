@@ -113,6 +113,16 @@ function eo_transform() {
       return scope;
     };
 
+    scope.filter = function(f) {
+      var action = {
+        impl: eo_transform_filter,
+        filter: f,
+        actions: []
+      };
+      actions.push(action);
+      return transform_scope(action.actions);
+    };
+
     scope.select = function(s) {
       var action = {
         impl: eo_transform_select,
@@ -367,16 +377,34 @@ function eo_transform_remove(nodes) {
     }
   }
 }
+function eo_transform_filter(nodes) {
+  var filteredNodes = [],
+      m = nodes.length,
+      f = this.filter,
+      i, // the node index
+      o; // current item
+  for (i = 0; i < m; ++i) {
+    eo_transform_stack[0] = (o = nodes[i]).data;
+    if (f.apply(o, eo_transform_stack)) filteredNodes.push(o);
+  }
+  eo_transform_actions(this.actions, filteredNodes);
+}
 function eo_transform_select(nodes) {
   var selectedNodes = [],
       m = nodes.length,
       s = this.selector,
       i, // the node index
-      o, // current node
-      c; // current child
+      o, // current item
+      p, // current node
+      c, // current selected item
+      e; // current selected node
   for (i = 0; i < m; ++i) {
-    selectedNodes.push(c = Object.create(o = nodes[i]));
-    c.node = (c.parentNode = o.node).querySelector(s);
+    e = (p = (o = nodes[i]).node).querySelector(s);
+    if (e != null) {
+      selectedNodes.push(c = Object.create(o));
+      c.parentNode = p;
+      c.node = e;
+    }
   }
   eo_transform_actions(this.actions, selectedNodes);
 }
