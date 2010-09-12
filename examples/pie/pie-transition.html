@@ -15,7 +15,7 @@ body {
 
 var eo = org.epheme;
 
-var data = normalize(range(10).map(Math.random).sort(descending)),
+var data = arcs(range(10).map(Math.random).sort(descending)),
     w = 400,
     h = 400,
     r = Math.min(w, h) / 2;
@@ -46,25 +46,49 @@ arcs.add("svg:text")
     .attr("text-anchor", "middle")
     .text(function(d) { return d.value.toFixed(2); });
 
-vis.apply();
-
-var t = eo.transition()
+var tx = arcs.transition()
     .ease("bounce")
-    .duration(2000)
-  .selectAll("g.arc")
-    .data(data)
-  .select("path")
-    .attr("d", arc(r))
-    .end
-  .select("text")
+    .duration(2000);
+
+tx.select("path")
+    .attr("d", function(d) {
+      var a0 = eo.time * d.startAngle - Math.PI / 2,
+          a1 = eo.time * d.endAngle - Math.PI / 2;
+      return arc(r, a0, a1);
+    });
+
+tx.select("text")
     .attr("transform", function(d) {
       var a = eo.time * d.midAngle - Math.PI / 2,
           t = "rotate(" + a * 180 / Math.PI + ")translate(" + r * .8 + ",0)";
       return upright(a) ? t : t + "rotate(180)";
-    })
-  .start();
+    });
 
-window.addEventListener("keypress", t.start, false);
+vis.apply();
+
+// var t = eo.selectAll("g.arc")
+//     .data(data)
+//   .transition()
+//     .ease("bounce")
+//     .duration(2000);
+
+// t.select("path")
+//     .attr("d", function(d) {
+//       var a0 = eo.time * d.startAngle - Math.PI / 2,
+//           a1 = eo.time * d.endAngle - Math.PI / 2;
+//       return arc(r, a0, a1);
+//     });
+
+// t.select("text")
+//     .attr("transform", function(d) {
+//       var a = eo.time * d.midAngle - Math.PI / 2,
+//           t = "rotate(" + a * 180 / Math.PI + ")translate(" + r * .8 + ",0)";
+//       return upright(a) ? t : t + "rotate(180)";
+//     });
+
+// t.apply();
+
+// window.addEventListener("keypress", t.apply, false);
 
 function range(n) {
   var array = [];
@@ -72,7 +96,7 @@ function range(n) {
   return array;
 }
 
-function normalize(array) {
+function arcs(array) {
   var k = (2 * Math.PI) / array.reduce(function(p, d) { return p + d; }, 0),
       a = 0;
   return array.map(function(d, i) {
@@ -80,27 +104,21 @@ function normalize(array) {
       startAngle: a,
       midAngle: a + d * k / 2,
       endAngle: a += d * k,
-      index: i,
       value: d
     };
   });
 }
 
-function arc(r) {
-  return function(d) {
-    var t = eo.time,
-        a0 = t * d.startAngle - Math.PI / 2,
-        a1 = t * d.endAngle - Math.PI / 2;
-    return "M" + r * Math.cos(a0) + "," + r * Math.sin(a0)
-        + "A" + r + "," + r + " 0 "
-        + ((a1 - a0 < Math.PI) ? "0" : "1") + ",1 "
-        + r * Math.cos(a1) + "," + r * Math.sin(a1) + "L0,0Z";
-  };
+function arc(r, a0, a1) {
+  return "M" + r * Math.cos(a0) + "," + r * Math.sin(a0)
+      + "A" + r + "," + r + " 0 "
+      + ((a1 - a0 < Math.PI) ? "0" : "1") + ",1 "
+      + r * Math.cos(a1) + "," + r * Math.sin(a1) + "L0,0Z";
 }
 
 function index(colors) {
   return function(d) {
-    return colors[d.index % colors.length];
+    return colors[this.index % colors.length];
   };
 }
 

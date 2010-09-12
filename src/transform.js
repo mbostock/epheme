@@ -119,6 +119,36 @@ function eo_transform() {
       return transform_scope(scope, action.actions);
     };
 
+    scope.transition = function() {
+      var subscope, action = {
+        impl: eo_transform_transition,
+        actions: [],
+        ease: eo.ease("cubic-in-out"),
+        delay: 0,
+        duration: 250,
+        rate: 24
+      };
+      actions.push(action);
+      subscope = transform_scope(scope, action.actions);
+      subscope.ease = function(x) {
+        action.ease = typeof x == "string" ? eo.ease(x) : x;
+        return subscope;
+      };
+      subscope.delay = function(x) {
+        action.delay = x;
+        return subscope;
+      };
+      subscope.rate = function(x) {
+        action.rate = x;
+        return subscope;
+      };
+      subscope.duration = function(x) {
+        action.duration = x;
+        return subscope;
+      };
+      return subscope;
+    };
+
     return scope;
   }
 

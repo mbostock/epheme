@@ -14,7 +14,7 @@ function eo_transform_style(nodes) {
     for (i = 0; i < m; ++i) {
       o = nodes[i];
       eo_transform_stack[0] = o.data;
-      x = v.apply(null, eo_transform_stack);
+      x = v.apply(o, eo_transform_stack);
       x == null
           ? o.node.style.removeProperty(n)
           : o.node.style.setProperty(n, x, p);

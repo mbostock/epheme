@@ -8,7 +8,7 @@ function eo_transform_text(nodes) {
     for (i = 0; i < m; ++i) {
       o = nodes[i];
       eo_transform_stack[0] = o.data;
-      x = v.apply(null, eo_transform_stack);
+      x = v.apply(o, eo_transform_stack);
       o = o.node;
       while (o.lastChild) o.removeChild(o.lastChild);
       o.appendChild(document.createTextNode(x));

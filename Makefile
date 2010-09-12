@@ -24,7 +24,7 @@ SRC_FILES = \
 	src/transform_select_all.js \
 	src/transform_style.js \
 	src/transform_text.js \
-	src/transition.js \
+	src/transform_transition.js \
 	src/end.js
 
 all: epheme.js epheme.min.js

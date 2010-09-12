@@ -30,7 +30,7 @@ function eo_transform_attr(nodes) {
   } else if (typeof v == "function") {
     for (i = 0; i < m; ++i) {
       eo_transform_stack[0] = (o = nodes[i]).data;
-      x = v.apply(null, eo_transform_stack);
+      x = v.apply(o, eo_transform_stack);
       x == null
           ? o.node.removeAttribute(n)
           : o.node.setAttribute(n, x);
