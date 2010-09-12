@@ -15,7 +15,7 @@ body {
 
 var eo = org.epheme;
 
-var data = arcs(range(10).map(Math.random).sort(descending)),
+var data = normalize(range(10).map(Math.random).sort(descending)),
     w = 400,
     h = 400,
     r = Math.min(w, h) / 2;
@@ -66,29 +66,42 @@ tx.select("text")
 
 vis.apply();
 
-// var t = eo.selectAll("g.arc")
-//     .data(data)
-//   .transition()
-//     .ease("bounce")
-//     .duration(2000);
+var update = eo.selectAll("g.arc")
+    .data(function() {
+      var i = 0,
+          n = data.length;
+          data1 = normalize(range(n).map(Math.random).sort(descending));
+      for (; i < n; ++i) {
+        data1[i].prev = data[i];
+        data[i] = data1[i];
+      }
+      return data;
+    })
+  .transition()
+    .duration(500);
 
-// t.select("path")
-//     .attr("d", function(d) {
-//       var a0 = eo.time * d.startAngle - Math.PI / 2,
-//           a1 = eo.time * d.endAngle - Math.PI / 2;
-//       return arc(r, a0, a1);
-//     });
+update.select("path")
+    .attr("d", function(d) {
+      var t0 = 1 - eo.time,
+          t1 = eo.time,
+          a0 = t0 * d.prev.startAngle + t1 * d.startAngle - Math.PI / 2,
+          a1 = t0 * d.prev.endAngle + t1 * d.endAngle - Math.PI / 2;
+      return arc(r, a0, a1);
+    });
 
-// t.select("text")
-//     .attr("transform", function(d) {
-//       var a = eo.time * d.midAngle - Math.PI / 2,
-//           t = "rotate(" + a * 180 / Math.PI + ")translate(" + r * .8 + ",0)";
-//       return upright(a) ? t : t + "rotate(180)";
-//     });
+update.select("text")
+    .attr("transform", function(d) {
+      var t0 = 1 - eo.time,
+          t1 = eo.time,
+          a = t0 * d.prev.midAngle + t1 * d.midAngle - Math.PI / 2,
+          t = "rotate(" + a * 180 / Math.PI + ")translate(" + r * .8 + ",0)";
+      return upright(a) ? t : t + "rotate(180)";
+    });
 
-// t.apply();
+update.end.select("text")
+    .text(function(d) { return d.value.toFixed(2); });
 
-// window.addEventListener("keypress", t.apply, false);
+window.addEventListener("keypress", update.apply, false);
 
 function range(n) {
   var array = [];
@@ -96,7 +109,7 @@ function range(n) {
   return array;
 }
 
-function arcs(array) {
+function normalize(array) {
   var k = (2 * Math.PI) / array.reduce(function(p, d) { return p + d; }, 0),
       a = 0;
   return array.map(function(d, i) {

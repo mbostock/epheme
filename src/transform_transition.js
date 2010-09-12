@@ -1,12 +1,14 @@
 function eo_transform_transition(nodes) {
   var that = this,
       actions = that.actions,
+      endActions = that.endActions,
       rate = that.rate,
       start = Date.now(),
       delay = that.delay,
       duration = that.duration,
       ease = that.ease,
       n = actions.length,
+      ne = endActions.length,
       m = nodes.length,
       i = 0, // current index
       o, // curent node
@@ -21,6 +23,8 @@ function eo_transform_transition(nodes) {
   function tick() {
     var s = eo_transform_stack,
         t = (Date.now() - start) / duration;
+
+    // Run the update actions for each tick.
     try {
       eo_transform_stack = stack;
       eo.time = ease(t < 0 ? 0 : t > 1 ? 1 : t);
@@ -29,6 +33,16 @@ function eo_transform_transition(nodes) {
       delete eo.time;
       eo_transform_stack = s;
     }
-    if (t >= 1) clearInterval(that.interval);
+
+    // When done, clear the interval and run the end actions.
+    if (t >= 1) {
+      clearInterval(that.interval);
+      try {
+        eo_transform_stack = stack;
+        for (i = 0; i < ne; ++i) endActions[i].impl(nodes);
+      } finally {
+        eo_transform_stack = s;
+      }
+    }
   }
 }

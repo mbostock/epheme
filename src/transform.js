@@ -12,7 +12,7 @@ function eo_transform() {
   function transform_scope(parent, actions) {
     var scope = Object.create(transform);
 
-    scope.end = parent;
+    scope.pop = parent;
 
     scope.data = function(v) {
       var subscope, action = {
@@ -123,6 +123,7 @@ function eo_transform() {
       var subscope, action = {
         impl: eo_transform_transition,
         actions: [],
+        endActions: [],
         ease: eo.ease("cubic-in-out"),
         delay: 0,
         duration: 250,
@@ -130,6 +131,7 @@ function eo_transform() {
       };
       actions.push(action);
       subscope = transform_scope(scope, action.actions);
+      subscope.end = transform_scope(scope, action.endActions);
       subscope.ease = function(x) {
         action.ease = typeof x == "string" ? eo.ease(x) : x;
         return subscope;
