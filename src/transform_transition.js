@@ -2,29 +2,65 @@ function eo_transform_transition(nodes) {
   var that = this,
       actions = that.actions,
       endActions = that.endActions,
-      rate = that.rate,
       start = Date.now(),
       delay = that.delay,
+      minDelay = Infinity,
+      maxDelay = -Infinity,
       duration = that.duration,
       ease = that.ease,
       n = actions.length,
-      ne = endActions.length,
+      k = endActions.length,
       m = nodes.length,
-      i = 0, // current index
+      i, // current index
+      j, // current index
       o, // curent node
+      x, // current value
       stack = eo_transform_stack.slice(); // stack snapshot
 
-  if (that.timeout) clearInterval(that.timeout);
-  that.timeout = setTimeout(function() {
-    if (that.interval) clearInterval(that.interval);
-    that.interval = setInterval(tick, rate);
-  }, delay);
+  // Clear any existing timeouts or intervals.
+  if (that.timeout) clearTimeout(that.timeout);
+  if (that.interval) clearInterval(that.interval);
 
-  function tick() {
+  // If delay is a function, transition each node separately.
+  if (typeof delay == "function") {
+    for (i = 0; i < m; ++i) {
+      eo_transform_stack[0] = (o = nodes[i]).data;
+      x = o.delay = delay.apply(o, eo_transform_stack);
+      if (x < minDelay) minDelay = x;
+      if (x > maxDelay) maxDelay = x;
+    }
+    that.timeout = setTimeout(function() {
+      that.interval = setInterval(tickOne, 24);
+    }, minDelay);
+  } else {
+    that.timeout = setTimeout(function() {
+      that.interval = setInterval(tickAll, 24);
+    }, delay);
+  }
+
+  function tickOne() {
     var s = eo_transform_stack,
-        t = (Date.now() - start) / duration;
+        q = Date.now(),
+        t;
+    try {
+      eo_transform_stack = stack;
+      for (i = 0; i < m; ++i) {
+        o = nodes[i];
+        t = (q - start - o.delay) / duration;
+        o = [o];
+        eo.time = ease(t < 0 ? 0 : t > 1 ? 1 : t);
+        for (j = 0; j < n; ++j) actions[j].impl(o);
+      }
+    } finally {
+      delete eo.time;
+      eo_transform_stack = s;
+    }
+    if ((q - start - maxDelay) / duration >= 1) end();
+  }
 
-    // Run the update actions for each tick.
+  function tickAll() {
+    var s = eo_transform_stack,
+        t = (Date.now() - start + delay) / duration;
     try {
       eo_transform_stack = stack;
       eo.time = ease(t < 0 ? 0 : t > 1 ? 1 : t);
@@ -33,16 +69,17 @@ function eo_transform_transition(nodes) {
       delete eo.time;
       eo_transform_stack = s;
     }
+    if (t >= 1) end();
+  }
 
-    // When done, clear the interval and run the end actions.
-    if (t >= 1) {
-      clearInterval(that.interval);
-      try {
-        eo_transform_stack = stack;
-        for (i = 0; i < ne; ++i) endActions[i].impl(nodes);
-      } finally {
-        eo_transform_stack = s;
-      }
+  function end() {
+    var s = eo_transform_stack;
+    clearInterval(that.interval);
+    try {
+      eo_transform_stack = stack;
+      for (i = 0; i < k; ++i) endActions[i].impl(nodes);
+    } finally {
+      eo_transform_stack = s;
     }
   }
 }

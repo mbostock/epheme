@@ -126,8 +126,7 @@ function eo_transform() {
         endActions: [],
         ease: eo.ease("cubic-in-out"),
         delay: 0,
-        duration: 250,
-        rate: 24
+        duration: 250
       };
       actions.push(action);
       subscope = transform_scope(scope, action.actions);
@@ -138,10 +137,6 @@ function eo_transform() {
       };
       subscope.delay = function(x) {
         action.delay = x;
-        return subscope;
-      };
-      subscope.rate = function(x) {
-        action.rate = x;
         return subscope;
       };
       subscope.duration = function(x) {
