@@ -47,20 +47,22 @@ function eo_transform_transition(nodes) {
       eo_transform_stack = stack;
       for (i = 0; i < m; ++i) {
         o = nodes[i];
-        if (o.end) continue;
         t = (q - start - o.delay) / duration;
         if (t < 0) continue;
-        if (t >= 1) o.end = true;
+        if (t > 1) t = 1;
         else d = false;
-        o = [o];
-        eo.time = ease(t < 0 ? 0 : t > 1 ? 1 : t);
-        for (j = 0; j < n; ++j) actions[j].impl(o);
+        eo.time = ease(t);
+        for (j = 0; j < n; ++j) actions[j].impl([o]);
+        if (t == 1) {
+          for (j = 0; j < k; ++j) endActions[j].impl([o]);
+          o.delay = Infinity;
+        }
       }
     } finally {
       delete eo.time;
       eo_transform_stack = s;
     }
-    if (d) end();
+    if (d) clearInterval(that.interval);
   }
 
   function tickAll() {
