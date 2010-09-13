@@ -9,7 +9,7 @@ body {
 }
 
 circle.dot {
-  fill: lightsteelblue;
+  fill: none;
   stroke: steelblue;
   stroke-width: 1.5px;
 }
@@ -89,10 +89,10 @@ var dots = vis.selectAll("circle.dot")
     .attr("cx", function(d) { return d.x * w; })
     .attr("cy", function(d) { return d.y * h; })
   .transition()
-    .ease("elastic")
     .delay(function() { return this.index * 3; })
     .duration(750)
-    .attr("r", eo.interpolate(0, 4.5));
+    .attr("stroke-opacity", eo.interpolate(1e-6, 1))
+    .attr("r", eo.interpolate(27, 4.5));
 
 vis.apply();
 
