@@ -1039,12 +1039,17 @@ function eo_transform_transition(nodes) {
   function tickOne() {
     var s = eo_transform_stack,
         q = Date.now(),
-        t;
+        t,
+        d = true;
     try {
       eo_transform_stack = stack;
       for (i = 0; i < m; ++i) {
         o = nodes[i];
+        if (o.end) continue;
         t = (q - start - o.delay) / duration;
+        if (t < 0) continue;
+        if (t >= 1) o.end = true;
+        else d = false;
         o = [o];
         eo.time = ease(t < 0 ? 0 : t > 1 ? 1 : t);
         for (j = 0; j < n; ++j) actions[j].impl(o);
@@ -1053,12 +1058,12 @@ function eo_transform_transition(nodes) {
       delete eo.time;
       eo_transform_stack = s;
     }
-    if ((q - start - maxDelay) / duration >= 1) end();
+    if (d) end();
   }
 
   function tickAll() {
     var s = eo_transform_stack,
-        t = (Date.now() - start + delay) / duration;
+        t = (Date.now() - start - delay) / duration;
     try {
       eo_transform_stack = stack;
       eo.time = ease(t < 0 ? 0 : t > 1 ? 1 : t);
