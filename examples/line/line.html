@@ -90,7 +90,7 @@ vis.selectAll("circle.line")
   .enter.add("svg:circle")
     .attr("class", "line")
     .attr("cx", function(d) { return d.x * w; })
-    .attr("cy", function(d) { return d.y * h; })
+    .attr("cy", function(d) { return (1 - d.y) * h; })
     .attr("r", 3.5);
 
 vis.apply();
@@ -105,8 +105,8 @@ function line(points) {
   var d = [],
       i = 1,
       p = points[0];
-  d.push("M", p.x * w, ",", p.y * h);
-  while (p = points[i++]) d.push("L", p.x * w, ",", p.y * h);
+  d.push("M", p.x * w, ",", (1 - p.y) * h);
+  while (p = points[i++]) d.push("L", p.x * w, ",", (1 - p.y) * h);
   return d.join("");
 }
 
