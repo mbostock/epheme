@@ -1,13 +1,13 @@
 function eo_transform_transition(nodes) {
-  var that = this,
-      actions = that.actions,
-      endActions = that.endActions,
+  var actions = this.actions,
+      endActions = this.endActions,
       start = Date.now(),
-      delay = that.delay,
+      delay = this.delay,
       minDelay = Infinity,
       maxDelay = -Infinity,
-      duration = that.duration,
-      ease = that.ease,
+      duration = this.duration,
+      ease = this.ease,
+      interval,
       n = actions.length,
       k = endActions.length,
       m = nodes.length,
@@ -17,10 +17,6 @@ function eo_transform_transition(nodes) {
       x, // current value
       stack = eo_transform_stack.slice(); // stack snapshot
 
-  // Clear any existing timeouts or intervals.
-  if (that.timeout) clearTimeout(that.timeout);
-  if (that.interval) clearInterval(that.interval);
-
   // If delay is a function, transition each node separately.
   if (typeof delay == "function") {
     for (i = 0; i < m; ++i) {
@@ -29,24 +25,31 @@ function eo_transform_transition(nodes) {
       if (x < minDelay) minDelay = x;
       if (x > maxDelay) maxDelay = x;
     }
-    that.timeout = setTimeout(function() {
-      that.interval = setInterval(tickOne, 24);
+    setTimeout(function() {
+      bind(interval = setInterval(tickOne, 24));
     }, minDelay);
   } else {
-    that.timeout = setTimeout(function() {
-      that.interval = setInterval(tickAll, 24);
+    setTimeout(function() {
+      bind(interval = setInterval(tickAll, 24));
     }, delay);
+  }
+
+  // Bind the active transition to the node.
+  function bind(interval) {
+    for (i = 0; i < m; ++i) nodes[i].node.interval = interval;
   }
 
   function tickOne() {
     var s = eo_transform_stack,
+        a = nodes.filter(function(o) { return o.node.interval == interval; }),
+        m = a.length,
         q = Date.now(),
         t,
         d = true;
     try {
       eo_transform_stack = stack;
       for (i = 0; i < m; ++i) {
-        o = nodes[i];
+        o = a[i];
         t = (q - start - o.delay) / duration;
         if (t < 0) continue;
         if (t > 1) t = 1;
@@ -55,38 +58,36 @@ function eo_transform_transition(nodes) {
         for (j = 0; j < n; ++j) actions[j].impl([o]);
         if (t == 1) {
           for (j = 0; j < k; ++j) endActions[j].impl([o]);
-          o.delay = Infinity;
+          o.delay = Infinity; // stop transitioning this node
         }
       }
     } finally {
       delete eo.time;
       eo_transform_stack = s;
     }
-    if (d) clearInterval(that.interval);
+    if (d) clearInterval(interval);
   }
 
   function tickAll() {
     var s = eo_transform_stack,
-        t = (Date.now() - start - delay) / duration;
+        t = (Date.now() - start - delay) / duration,
+        a = nodes.filter(function(o) { return o.node.interval == interval; });
     try {
       eo_transform_stack = stack;
       eo.time = ease(t < 0 ? 0 : t > 1 ? 1 : t);
-      for (i = 0; i < n; ++i) actions[i].impl(nodes);
+      for (i = 0; i < n; ++i) actions[i].impl(a);
     } finally {
       delete eo.time;
       eo_transform_stack = s;
     }
-    if (t >= 1) end();
-  }
-
-  function end() {
-    var s = eo_transform_stack;
-    clearInterval(that.interval);
-    try {
-      eo_transform_stack = stack;
-      for (i = 0; i < k; ++i) endActions[i].impl(nodes);
-    } finally {
-      eo_transform_stack = s;
+    if (t >= 1) {
+      clearInterval(interval);
+      try {
+        eo_transform_stack = stack;
+        for (i = 0; i < k; ++i) endActions[i].impl(a);
+      } finally {
+        eo_transform_stack = s;
+      }
     }
   }
 }

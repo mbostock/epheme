@@ -44,6 +44,7 @@ arcs.add("svg:path")
 arcs.add("svg:text")
     .attr("dy", ".35em")
     .attr("text-anchor", "middle")
+    .attr("display", "none")
     .text(function(d) { return d.value.toFixed(2); });
 
 var tx = arcs.transition()
@@ -54,14 +55,28 @@ tx.select("path")
     .attr("d", function(d) {
       var a0 = eo.time * d.startAngle - Math.PI / 2,
           a1 = eo.time * d.endAngle - Math.PI / 2;
-      return arc(r, a0, a1);
+      return arc(0, r, a0, a1);
     });
 
 tx.select("text")
+    .attr("display", null)
     .attr("transform", function(d) {
       var a = eo.time * d.midAngle - Math.PI / 2,
           t = "rotate(" + a * 180 / Math.PI + ")translate(" + r * .8 + ",0)";
       return upright(a) ? t : t + "rotate(180)";
+    });
+
+tx.end.select("path")
+  .transition()
+    .ease("elastic")
+    .delay(function() { return this.index * 50; })
+    .duration(750)
+    .attr("d", function(d) {
+      var r0 = eo.time * r * .6,
+          r1 = r,
+          a0 = d.startAngle - Math.PI / 2,
+          a1 = d.endAngle - Math.PI / 2;
+      return arc(r0, r1, a0, a1);
     });
 
 vis.apply();
@@ -86,7 +101,7 @@ update.select("path")
           t1 = eo.time,
           a0 = t0 * d.prev.startAngle + t1 * d.startAngle - Math.PI / 2,
           a1 = t0 * d.prev.endAngle + t1 * d.endAngle - Math.PI / 2;
-      return arc(r, a0, a1);
+      return arc(r * .6, r, a0, a1);
     });
 
 update.select("text")
@@ -122,11 +137,20 @@ function normalize(array) {
   });
 }
 
-function arc(r, a0, a1) {
-  return "M" + r * Math.cos(a0) + "," + r * Math.sin(a0)
-      + "A" + r + "," + r + " 0 "
-      + ((a1 - a0 < Math.PI) ? "0" : "1") + ",1 "
-      + r * Math.cos(a1) + "," + r * Math.sin(a1) + "L0,0Z";
+function arc(r0, r1, a0, a1) {
+  var a = a1 - a0,
+      c0 = Math.cos(a0),
+      s0 = Math.sin(a0),
+      c1 = Math.cos(a1),
+      s1 = Math.sin(a1);
+  return "M" + r1 * c0 + "," + r1 * s0
+      + "A" + r1 + "," + r1 + " 0 "
+      + ((a < Math.PI) ? "0" : "1") + ",1 "
+      + r1 * c1 + "," + r1 * s1
+      + "L" + r0 * c1 + "," + r0 * s1
+      + "A" + r0 + "," + r0 + " 0 "
+      + ((a < Math.PI) ? "0" : "1") + ",0 "
+      + r0 * c0 + "," + r0 * s0 + "Z";
 }
 
 function index(colors) {
