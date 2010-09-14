@@ -81,43 +81,6 @@ tx.end.select("path")
 
 vis.apply();
 
-var update = eo.selectAll("g.arc")
-    .data(function() {
-      var i = 0,
-          n = data.length;
-          data1 = normalize(range(n).map(Math.random).sort(descending));
-      for (; i < n; ++i) {
-        data1[i].prev = data[i];
-        data[i] = data1[i];
-      }
-      return data;
-    })
-  .transition()
-    .duration(500);
-
-update.select("path")
-    .attr("d", function(d) {
-      var t0 = 1 - eo.time,
-          t1 = eo.time,
-          a0 = t0 * d.prev.startAngle + t1 * d.startAngle - Math.PI / 2,
-          a1 = t0 * d.prev.endAngle + t1 * d.endAngle - Math.PI / 2;
-      return arc(r * .6, r, a0, a1);
-    });
-
-update.select("text")
-    .attr("transform", function(d) {
-      var t0 = 1 - eo.time,
-          t1 = eo.time,
-          a = t0 * d.prev.midAngle + t1 * d.midAngle - Math.PI / 2,
-          t = "rotate(" + a * 180 / Math.PI + ")translate(" + r * .8 + ",0)";
-      return upright(a) ? t : t + "rotate(180)";
-    });
-
-update.end.select("text")
-    .text(function(d) { return d.value.toFixed(2); });
-
-window.addEventListener("keypress", update.apply, false);
-
 function range(n) {
   var array = [];
   for (var i = 0; i < n; i++) array.push(i);

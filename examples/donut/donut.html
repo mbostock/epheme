@@ -1,0 +1,167 @@
+<html>
+  <head>
+    <title>Donut Chart</title>
+    <script type="text/javascript" src="../../epheme.js"></script>
+    <style type="text/css">
+
+body {
+  font: 10px sans-serif;
+}
+
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript">
+
+var eo = org.epheme;
+
+var data = normalize(range(10).map(Math.random)),
+    w = 400,
+    h = 400,
+    r = Math.min(w, h) / 2;
+
+var colors = [
+  "#1f77b4", "#aec7e8", "#ff7f0e", "#ffbb78", "#2ca02c",
+  "#98df8a", "#d62728", "#ff9896", "#9467bd", "#c5b0d5",
+  "#8c564b", "#c49c94", "#e377c2", "#f7b6d2", "#7f7f7f",
+  "#c7c7c7", "#bcbd22", "#dbdb8d", "#17becf", "#9edae5"
+];
+
+var vis = eo.select("body")
+  .add("svg:svg")
+    .attr("width", w)
+    .attr("height", h);
+
+var arcs = vis.selectAll("g.arc")
+    .data(data)
+  .enter.add("svg:g")
+    .attr("class", "arc")
+    .attr("transform", "translate(" + r + "," + r + ")");
+
+arcs.add("svg:path")
+    .attr("fill", index(colors))
+    .attr("d", function(d) {
+      var r0 = r * .6,
+          r1 = r,
+          a0 = d.startAngle - Math.PI / 2,
+          a1 = d.endAngle - Math.PI / 2;
+      return arc(r0, r1, a0, a1);
+    });
+
+vis.apply();
+
+var update = eo.selectAll("g.arc > path")
+    .data(function() {
+      var i = 0,
+          n = data.length;
+          data1 = normalize(range(n).map(Math.random));
+      for (; i < n; ++i) {
+        data1[i].prev = data[i];
+        data[i] = data1[i];
+      }
+      return data;
+    })
+  .transition() // 1. Wedges split into two rings.
+    .attr("d", function(d) {
+      var t0 = 1 - eo.time,
+          t1 = eo.time,
+          a0 = d.prev.startAngle - Math.PI / 2,
+          a1 = d.prev.endAngle - Math.PI / 2,
+          r0 = this.index & 1 ? r * .6 : t0 * r * .6 + t1 * r * .8,
+          r1 = this.index & 1 ? t0 * r + t1 * r * .8 : r;
+      return arc(r0, r1, a0, a1);
+    })
+  .end
+  .transition() // 2. Wedges translate to be center on their final position.
+    .attr("d", function(d) {
+      var t0 = 1 - eo.time,
+          t1 = eo.time,
+          a0 = t0 * d.prev.startAngle + t1 * (d.startAngle + d.endAngle - d.prev.endAngle + d.prev.startAngle) / 2 - Math.PI / 2,
+          a1 = a0 + d.prev.endAngle - d.prev.startAngle,
+          r0 = this.index & 1 ? r * .6 : r * .8,
+          r1 = this.index & 1 ? r * .8 : r;
+      return arc(r0, r1, a0, a1);
+    })
+  .end
+  .transition() // 3. Wedges then update their values, changing size.
+    .attr("d", function(d) {
+      var t0 = 1 - eo.time,
+          t1 = eo.time,
+          a0 = t0 * (d.startAngle + d.endAngle - d.prev.endAngle + d.prev.startAngle) / 2 + t1 * d.startAngle - Math.PI / 2,
+          a1 = a0 + t0 * (d.prev.endAngle - d.prev.startAngle) + t1 * (d.endAngle - d.startAngle),
+          r0 = this.index & 1 ? r * .6 : r * .8,
+          r1 = this.index & 1 ? r * .8 : r;
+      return arc(r0, r1, a0, a1);
+    })
+  .end
+  .transition() // 4. Wedges reunite into a single ring.
+    .attr("d", function(d) {
+      var t0 = 1 - eo.time,
+          t1 = eo.time,
+          a0 = d.startAngle - Math.PI / 2,
+          a1 = d.endAngle - Math.PI / 2,
+          r0 = this.index & 1 ? r * .6 : t1 * r * .6 + t0 * r * .8,
+          r1 = this.index & 1 ? t1 * r + t0 * r * .8 : r;
+      return arc(r0, r1, a0, a1);
+    });
+
+window.addEventListener("keypress", update.apply, false);
+
+function range(n) {
+  var array = [];
+  for (var i = 0; i < n; i++) array.push(i);
+  return array;
+}
+
+function normalize(array) {
+  var k = (2 * Math.PI) / array.reduce(function(p, d) { return p + d; }, 0),
+      a = 0;
+  return array.map(function(d, i) {
+    return {
+      startAngle: a,
+      midAngle: a + d * k / 2,
+      endAngle: a += d * k,
+      value: d
+    };
+  });
+}
+
+function arc(r0, r1, a0, a1) {
+  var a = a1 - a0,
+      c0 = Math.cos(a0),
+      s0 = Math.sin(a0),
+      c1 = Math.cos(a1),
+      s1 = Math.sin(a1);
+  return "M" + r1 * c0 + "," + r1 * s0
+      + "A" + r1 + "," + r1 + " 0 "
+      + ((a < Math.PI) ? "0" : "1") + ",1 "
+      + r1 * c1 + "," + r1 * s1
+      + "L" + r0 * c1 + "," + r0 * s1
+      + "A" + r0 + "," + r0 + " 0 "
+      + ((a < Math.PI) ? "0" : "1") + ",0 "
+      + r0 * c0 + "," + r0 * s0 + "Z";
+}
+
+function index(colors) {
+  return function(d) {
+    return colors[this.index % colors.length];
+  };
+}
+
+function upright(a) {
+  a = a % (2 * Math.PI);
+  a = a < 0 ? 2 * Math.PI + a : a;
+  return a < Math.PI / 2 || a >= 3 * Math.PI / 2;
+}
+
+function ascending(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+function descending(a, b) {
+  return a < b ? 1 : a > b ? -1 : 0;
+}
+
+    </script>
+  </body>
+</html>
