@@ -4,10 +4,31 @@ function eo_transform() {
   var transform = {},
       actions = [];
 
-  // TODO
+  // TODO reorder elements
   // convenience method for replacing elements?
   // how to insert new element at a given location?
   // how to move elements around, sort, reverse or reorder?
+
+  // TODO value transforms
+  // how to inspect current attr/style/text value from transform?
+  // perhaps push/pop values for temporary change (e.g., :hover)?
+
+  // TODO extensibility
+  // register hooks for transform extensibility outside the library?
+  // how to encapsulate higher level logic (e.g., bars, wedges, charts)?
+  // virtual nodes? map to canvas?
+
+  // TODO selectors
+  // allow select / selectAll argument to be function
+  // allow select / selectAll argument to be node / nodes
+  // allow select / selectAll argument to be xpath
+  // allow selectParent?
+  // allow selectFirstChild, selectLastChild, selectChildren?
+  // allow selectNext, selectPrevious?
+
+  // TODO transitions
+  // implicit interpolators from current -> target value
+  // how to do staggered transition on line control points? (virtual nodes?)
 
   function transform_scope(parent, actions) {
     var scope = Object.create(transform);
