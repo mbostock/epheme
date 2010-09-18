@@ -192,24 +192,25 @@ function bounce(t) {
       : 7.5625 * (t -= 2.625 / 2.75) * t + .984375;
 }
 eo.tween = function(a, b) {
-  if (typeof a != "number" || typeof b != "number") {
-    var u = eo_tween_digits.exec(a);
-    a = parseFloat(a);
-    b = parseFloat(b) - a;
-    if (u) {
-      u = u[1];
-      return function() {
-        return a + b * eo.time + u;
-      };
-    }
-  }
-  b -= a;
-  return function() {
-    return a + b * eo.time;
-  };
+  var u = eo_tween_digits.exec(a)[1];
+  a = parseFloat(a);
+  b = parseFloat(b) - a;
+  return u.length
+      ? function() { return a + b * eo.time + u; }
+      : function() { return a + b * eo.time; };
 };
 
 var eo_tween_digits = /[-+]?\d*\.?\d*(?:[eE]\d+)?(.*)/;
+
+var eo_tween_rgb = {
+  "background": 1,
+  "fill": 1,
+  "stroke": 1
+};
+
+function eo_tween(n) {
+  return n in eo_tween_rgb || /\bcolor\b/.test(n) ? eo.rgb.tween : eo.tween;
+}
 eo.rgb = function(format) {
   var r, // red channel; int in [0, 255]
       g, // green channel; int in [0, 255]
@@ -498,8 +499,6 @@ function eo_transform() {
   // allow selectNext, selectPrevious?
 
   // TODO transitions
-  // implicit tweens from current -> target value
-  // implicit tweens could use a 'setup' hook for attr / style / text?
   // how to do staggered transition on line control points? (virtual nodes?)
 
   function transform_scope(parent, actions) {
@@ -535,12 +534,33 @@ function eo_transform() {
       return scope;
     };
 
+    scope.attr.tween = function(n, v, t) {
+      actions.push({
+        impl: eo_transform_attr_tween,
+        name: ns.qualify(n),
+        value: v,
+        tween: arguments.length < 3 ? eo_tween(n) : t
+      });
+      return scope;
+    };
+
     scope.style = function(n, v, p) {
       actions.push({
         impl: eo_transform_style,
         name: n,
         value: v,
         priority: arguments.length < 3 ? null : p
+      });
+      return scope;
+    };
+
+    scope.style.tween = function(n, v, p, t) {
+      actions.push({
+        impl: eo_transform_style_tween,
+        name: n,
+        value: v,
+        priority: arguments.length < 3 ? null : p,
+        tween: arguments.length < 4 ? eo_tween(n) : t
       });
       return scope;
     };
@@ -744,6 +764,51 @@ function eo_transform_attr(nodes) {
   } else {
     for (i = 0; i < m; ++i) {
       nodes[i].node.setAttribute(n, v);
+    }
+  }
+}
+
+function eo_transform_attr_tween(nodes) {
+  var m = nodes.length,
+      n = this.name,
+      v = this.value,
+      T = this.tween,
+      t = this.tweens,
+      i, // current index
+      o; // current node
+
+  if (!t) {
+    t = this.tweens = [];
+    if (n.local) {
+      if (typeof v == "function") {
+        for (i = 0; i < m; ++i) {
+          eo_transform_stack[0] = (o = nodes[i]).data;
+          t.push(T(o.node.getAttributeNS(n.space, n.local), v.apply(o, eo_transform_stack)));
+        }
+      } else {
+        for (i = 0; i < m; ++i) {
+          t.push(T(nodes[i].node.getAttributeNS(n.space, n.local), v));
+        }
+      }
+    } else if (typeof v == "function") {
+      for (i = 0; i < m; ++i) {
+        eo_transform_stack[0] = (o = nodes[i]).data;
+        t.push(T(o.node.getAttribute(n), v.apply(o, eo_transform_stack)));
+      }
+    } else {
+      for (i = 0; i < m; ++i) {
+        t.push(T(nodes[i].node.getAttribute(n), v));
+      }
+    }
+  }
+
+  if (n.local) {
+    for (i = 0; i < m; ++i) {
+      nodes[i].node.setAttributeNS(n.space, n.local, t[i]());
+    }
+  } else {
+    for (i = 0; i < m; ++i) {
+      nodes[i].node.setAttribute(n, t[i]());
     }
   }
 }
@@ -1005,6 +1070,35 @@ function eo_transform_style(nodes) {
     for (i = 0; i < m; ++i) {
       nodes[i].node.style.setProperty(n, v, p);
     }
+  }
+}
+
+function eo_transform_style_tween(nodes) {
+  var m = nodes.length,
+      n = this.name,
+      v = this.value,
+      p = this.priority,
+      T = this.tween,
+      t = this.tweens,
+      i, // current index
+      o; // current node
+
+  if (!t) {
+    t = this.tweens = [];
+    if (typeof v == "function") {
+      for (i = 0; i < m; ++i) {
+        eo_transform_stack[0] = (o = nodes[i]).data;
+        t.push(T(o.style.getPropertyValue(n), v.apply(o, eo_transform_stack)));
+      }
+    } else {
+      for (i = 0; i < m; ++i) {
+        t.push(T(nodes[i].node.style.getPropertyValue(n), v));
+      }
+    }
+  }
+
+  for (i = 0; i < m; ++i) {
+    nodes[i].node.style.setProperty(n, t[i](), p);
   }
 }
 function eo_transform_text(nodes) {

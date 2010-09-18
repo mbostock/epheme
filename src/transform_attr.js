@@ -41,3 +41,48 @@ function eo_transform_attr(nodes) {
     }
   }
 }
+
+function eo_transform_attr_tween(nodes) {
+  var m = nodes.length,
+      n = this.name,
+      v = this.value,
+      T = this.tween,
+      t = this.tweens,
+      i, // current index
+      o; // current node
+
+  if (!t) {
+    t = this.tweens = [];
+    if (n.local) {
+      if (typeof v == "function") {
+        for (i = 0; i < m; ++i) {
+          eo_transform_stack[0] = (o = nodes[i]).data;
+          t.push(T(o.node.getAttributeNS(n.space, n.local), v.apply(o, eo_transform_stack)));
+        }
+      } else {
+        for (i = 0; i < m; ++i) {
+          t.push(T(nodes[i].node.getAttributeNS(n.space, n.local), v));
+        }
+      }
+    } else if (typeof v == "function") {
+      for (i = 0; i < m; ++i) {
+        eo_transform_stack[0] = (o = nodes[i]).data;
+        t.push(T(o.node.getAttribute(n), v.apply(o, eo_transform_stack)));
+      }
+    } else {
+      for (i = 0; i < m; ++i) {
+        t.push(T(nodes[i].node.getAttribute(n), v));
+      }
+    }
+  }
+
+  if (n.local) {
+    for (i = 0; i < m; ++i) {
+      nodes[i].node.setAttributeNS(n.space, n.local, t[i]());
+    }
+  } else {
+    for (i = 0; i < m; ++i) {
+      nodes[i].node.setAttribute(n, t[i]());
+    }
+  }
+}

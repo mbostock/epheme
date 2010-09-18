@@ -88,11 +88,13 @@ var dots = vis.selectAll("circle.dot")
     .attr("class", "dot")
     .attr("cx", function(d) { return d.x * w; })
     .attr("cy", function(d) { return d.y * h; })
+    .attr("r", 27)
+    .attr("stroke-opacity", 1e-6)
   .transition()
     .delay(function() { return this.index * 3; })
     .duration(750)
-    .attr("stroke-opacity", eo.interpolate(1e-6, 1))
-    .attr("r", eo.interpolate(27, 4.5));
+    .attr.tween("stroke-opacity", 1)
+    .attr.tween("r", 4.5);
 
 vis.apply();
 

@@ -28,11 +28,13 @@ div {
 var eo = org.epheme;
 
 var t = eo.select("div")
+    .style("width", "0%")
+    .style("background-color", "steelblue")
   .transition()
     .ease("bounce")
     .duration(2000)
-    .style("width", eo.interpolate("0%", "100%"))
-    .style("background", eo.interpolateRgb("steelblue", "brown"))
+    .style.tween("width", "100%")
+    .style.tween("background-color", "brown")
     .text(function() { return ~~(eo.time * 100) + "\u00a0"; })
   .apply();
 

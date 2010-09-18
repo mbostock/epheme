@@ -32,8 +32,6 @@ function eo_transform() {
   // allow selectNext, selectPrevious?
 
   // TODO transitions
-  // implicit tweens from current -> target value
-  // implicit tweens could use a 'setup' hook for attr / style / text?
   // how to do staggered transition on line control points? (virtual nodes?)
 
   function transform_scope(parent, actions) {
@@ -69,12 +67,33 @@ function eo_transform() {
       return scope;
     };
 
+    scope.attr.tween = function(n, v, t) {
+      actions.push({
+        impl: eo_transform_attr_tween,
+        name: ns.qualify(n),
+        value: v,
+        tween: arguments.length < 3 ? eo_tween(n) : t
+      });
+      return scope;
+    };
+
     scope.style = function(n, v, p) {
       actions.push({
         impl: eo_transform_style,
         name: n,
         value: v,
         priority: arguments.length < 3 ? null : p
+      });
+      return scope;
+    };
+
+    scope.style.tween = function(n, v, p, t) {
+      actions.push({
+        impl: eo_transform_style_tween,
+        name: n,
+        value: v,
+        priority: arguments.length < 3 ? null : p,
+        tween: arguments.length < 4 ? eo_tween(n) : t
       });
       return scope;
     };
