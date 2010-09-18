@@ -20,8 +20,8 @@ function eo_tween(n) {
 }
 
 eo.tweenRgb = function(a, b) {
-  a = eo.rgb(a);
-  b = eo.rgb(b);
+  a = eo_rgb(a);
+  b = eo_rgb(b);
   var ar = a.r,
       ag = a.g,
       ab = a.b,

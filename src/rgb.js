@@ -1,4 +1,4 @@
-eo.rgb = function(format) {
+function eo_rgb(format) {
   var r, // red channel; int in [0, 255]
       g, // green channel; int in [0, 255]
       b, // blue channel; int in [0, 255]
@@ -236,4 +236,4 @@ var eo_rgb_names = {
   yellowgreen: "#9acd32"
 };
 
-for (var x in eo_rgb_names) eo_rgb_names[x] = eo.rgb(eo_rgb_names[x]);
+for (var x in eo_rgb_names) eo_rgb_names[x] = eo_rgb(eo_rgb_names[x]);
