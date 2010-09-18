@@ -234,3 +234,21 @@ var eo_rgb_names = {
 };
 
 for (var x in eo_rgb_names) eo_rgb_names[x] = eo.rgb(eo_rgb_names[x]);
+
+eo.rgb.tween = function(a, b) {
+  a = eo.rgb(a);
+  b = eo.rgb(b);
+  var ar = a.r,
+      ag = a.g,
+      ab = a.b,
+      br = b.r - ar,
+      bg = b.g - ag,
+      bb = b.b - ab;
+  return function() {
+    var t = eo.time;
+    return "rgb(" + Math.round(ar + br * t)
+        + "," + Math.round(ag + bg * t)
+        + "," + Math.round(ab + bb * t)
+        + ")";
+  };
+};

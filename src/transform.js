@@ -32,8 +32,6 @@ function eo_transform() {
   // allow selectNext, selectPrevious?
 
   // TODO transitions
-  // eo.interpolate -> eo.tween
-  // eo.interpolateRgb -> eo.tween.rgb? eo.rgb.tween?
   // implicit tweens from current -> target value
   // implicit tweens could use a 'setup' hook for attr / style / text?
   // how to do staggered transition on line control points? (virtual nodes?)

@@ -191,9 +191,9 @@ function bounce(t) {
       : t < 2.5 / 2.75 ? 7.5625 * (t -= 2.25 / 2.75) * t + .9375
       : 7.5625 * (t -= 2.625 / 2.75) * t + .984375;
 }
-eo.interpolate = function(a, b) {
+eo.tween = function(a, b) {
   if (typeof a != "number" || typeof b != "number") {
-    var u = eo_interpolate_digits.exec(a);
+    var u = eo_tween_digits.exec(a);
     a = parseFloat(a);
     b = parseFloat(b) - a;
     if (u) {
@@ -209,25 +209,7 @@ eo.interpolate = function(a, b) {
   };
 };
 
-eo.interpolateRgb = function(a, b) {
-  a = eo.rgb(a);
-  b = eo.rgb(b);
-  var ar = a.r,
-      ag = a.g,
-      ab = a.b,
-      br = b.r - ar,
-      bg = b.g - ag,
-      bb = b.b - ab;
-  return function() {
-    var t = eo.time;
-    return "rgb(" + Math.round(ar + br * t)
-        + "," + Math.round(ag + bg * t)
-        + "," + Math.round(ab + bb * t)
-        + ")";
-  };
-};
-
-var eo_interpolate_digits = /[-+]?\d*\.?\d*(?:[eE]\d+)?(.*)/;
+var eo_tween_digits = /[-+]?\d*\.?\d*(?:[eE]\d+)?(.*)/;
 eo.rgb = function(format) {
   var r, // red channel; int in [0, 255]
       g, // green channel; int in [0, 255]
@@ -464,6 +446,24 @@ var eo_rgb_names = {
 };
 
 for (var x in eo_rgb_names) eo_rgb_names[x] = eo.rgb(eo_rgb_names[x]);
+
+eo.rgb.tween = function(a, b) {
+  a = eo.rgb(a);
+  b = eo.rgb(b);
+  var ar = a.r,
+      ag = a.g,
+      ab = a.b,
+      br = b.r - ar,
+      bg = b.g - ag,
+      bb = b.b - ab;
+  return function() {
+    var t = eo.time;
+    return "rgb(" + Math.round(ar + br * t)
+        + "," + Math.round(ag + bg * t)
+        + "," + Math.round(ab + bb * t)
+        + ")";
+  };
+};
 var eo_transform_stack = [];
 
 function eo_transform() {
@@ -498,8 +498,6 @@ function eo_transform() {
   // allow selectNext, selectPrevious?
 
   // TODO transitions
-  // eo.interpolate -> eo.tween
-  // eo.interpolateRgb -> eo.tween.rgb? eo.rgb.tween?
   // implicit tweens from current -> target value
   // implicit tweens could use a 'setup' hook for attr / style / text?
   // how to do staggered transition on line control points? (virtual nodes?)
