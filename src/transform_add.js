@@ -1,4 +1,4 @@
-function eo_transform_add(nodes) {
+function eo_transform_add(nodes, pass) {
   var m = nodes.length,
       n = this.name,
       childNodes = [],
@@ -16,5 +16,5 @@ function eo_transform_add(nodes) {
       c.node = (c.parentNode = o.node).appendChild(document.createElement(n));
     }
   }
-  eo_transform_actions(this.actions, childNodes);
+  pass(this.actions, childNodes);
 }

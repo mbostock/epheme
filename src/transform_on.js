@@ -24,7 +24,7 @@ function eo_transform_on(nodes) {
       try {
         eo_transform_stack = stack;
         eo.event = e;
-        for (i = 0; i < n; ++i) actions[i].impl(o);
+        for (i = 0; i < n; ++i) actions[i].impl(o, eo_transform_impl);
       } finally {
         delete eo.event;
         eo_transform_stack = s;

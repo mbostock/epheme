@@ -36,7 +36,18 @@ function eo_transform_transition(nodes) {
 
   // Bind the active transition to the node.
   function bind(interval) {
-    for (i = 0; i < m; ++i) nodes[i].node.interval = interval;
+    var s = eo_transform_stack;
+    for (i = 0; i < m; ++i) {
+      (o = nodes[i]).node.interval = interval;
+    }
+    try {
+      eo.time = 0;
+      eo_transform_stack = stack;
+      eo_transform_transition_bind(actions, nodes);
+    } finally {
+      delete eo.time;
+      eo_transform_stack = s;
+    }
   }
 
   function tickOne() {
@@ -55,9 +66,9 @@ function eo_transform_transition(nodes) {
         if (t > 1) t = 1;
         else d = false;
         eo.time = ease(t);
-        for (j = 0; j < n; ++j) actions[j].impl([o]);
+        for (j = 0; j < n; ++j) actions[j].impl([o], eo_transform_impl);
         if (t == 1) {
-          for (j = 0; j < k; ++j) endActions[j].impl([o]);
+          for (j = 0; j < k; ++j) endActions[j].impl([o], eo_transform_impl);
           o.delay = Infinity; // stop transitioning this node
         }
       }
@@ -75,7 +86,7 @@ function eo_transform_transition(nodes) {
     try {
       eo_transform_stack = stack;
       eo.time = ease(t < 0 ? 0 : t > 1 ? 1 : t);
-      for (i = 0; i < n; ++i) actions[i].impl(a);
+      for (i = 0; i < n; ++i) actions[i].impl(a, eo_transform_impl);
     } finally {
       delete eo.time;
       eo_transform_stack = s;
@@ -84,10 +95,25 @@ function eo_transform_transition(nodes) {
       clearInterval(interval);
       try {
         eo_transform_stack = stack;
-        for (i = 0; i < k; ++i) endActions[i].impl(a);
+        for (i = 0; i < k; ++i) endActions[i].impl(a, eo_transform_impl);
       } finally {
         eo_transform_stack = s;
       }
     }
+  }
+}
+
+function eo_transform_transition_bind(actions, nodes) {
+  var n = actions.length,
+      m = nodes.length,
+      a, // current action
+      i; // current index
+  for (i = 0; i < m; ++i) {
+    nodes[i].tween = {};
+  }
+  for (i = 0; i < n; ++i) {
+    a = actions[i];
+    if (a.bind) a.bind(nodes);
+    a.impl(nodes, eo_transform_transition_bind);
   }
 }

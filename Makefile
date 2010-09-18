@@ -14,7 +14,6 @@ SRC_FILES = \
 	src/tween.js \
 	src/rgb.js \
 	src/transform.js \
-	src/transform_actions.js \
 	src/transform_add.js \
 	src/transform_attr.js \
 	src/transform_data.js \
@@ -32,7 +31,7 @@ all: epheme.js epheme.min.js
 
 epheme.min.js: epheme.js Makefile src/externs.js
 	rm -f $@
-	$(JS_COMPILER) < epheme.js >> $@
+	$(JS_COMPILER) --js $< --js_output_file $@
 
 epheme.js: $(SRC_FILES) Makefile
 	rm -f $@

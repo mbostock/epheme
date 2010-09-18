@@ -1,4 +1,4 @@
-function eo_transform_data(nodes) {
+function eo_transform_data(nodes, pass) {
   var data = this.value,
       m = nodes.length,
       n, // data length
@@ -117,7 +117,33 @@ function eo_transform_data(nodes) {
     }
   }
 
-  eo_transform_actions(this.enterActions, enterNodes);
-  eo_transform_actions(this.actions, updateNodes);
-  eo_transform_actions(this.exitActions, exitNodes);
+  pass(this.enterActions, enterNodes);
+  pass(this.actions, updateNodes);
+  pass(this.exitActions, exitNodes);
+}
+
+function eo_transform_data_tween(nodes) {
+  var m = nodes.length,
+      i, // current index
+      o; // current node
+  for (i = 0; i < m; ++i) {
+    (o = nodes[i]).data = o.tween.data();
+  }
+}
+
+function eo_transform_data_tween_bind(nodes) {
+  var m = nodes.length,
+      v = this.value,
+      T = this.tween,
+      i, // current index
+      o; // current node
+  if (typeof v === "function") {
+    for (i = 0; i < m; ++i) {
+      (o = nodes[i]).tween.data = T(eo_transform_stack[0] = o.data, v.apply(o, eo_transform_stack));
+    }
+  } else {
+    for (i = 0; i < m; ++i) {
+      (o = nodes[i]).tween.data = T(o.data, v);
+    }
+  }
 }

@@ -229,6 +229,36 @@ eo.tweenRgb = function(a, b) {
         + ")";
   };
 };
+
+eo.tweenObject = function(a, b) {
+  var t = {},
+      c = {},
+      k,
+      va,
+      vb;
+  for (k in a) {
+    if (k in b) {
+      va = a[k];
+      vb = b[k];
+      t[k] = typeof va === "object"
+          ? eo.tweenObject(va, vb)
+          : eo_tween(k)(va, vb);
+    } else {
+      c[k] = a[k];
+    }
+  }
+  for (k in b) {
+    if (!(k in a)) {
+      c[k] = b[k];
+    }
+  }
+  return function() {
+    var o = {};
+    for (k in t) o[k] = t[k]();
+    for (k in c) o[k] = c[k];
+    return o;
+  };
+};
 eo.rgb = function(format) {
   var r, // red channel; int in [0, 255]
       g, // green channel; int in [0, 255]
@@ -501,6 +531,9 @@ function eo_transform() {
   // allow selectFirstChild, selectLastChild, selectChildren?
   // allow selectNext, selectPrevious?
 
+  // TODO performance
+  // dispatch to different impl based on ns.qualify, typeof v === "function", etc.
+
   // TODO transitions
   // how to do staggered transition on line control points? (virtual nodes?)
 
@@ -528,6 +561,16 @@ function eo_transform() {
       return subscope;
     };
 
+    scope.tweenData = function(v, t) {
+      actions.push({
+        impl: eo_transform_data_tween,
+        bind: eo_transform_data_tween_bind,
+        value: v,
+        tween: arguments.length < 2 ? eo.tweenObject : t
+      });
+      return scope;
+    };
+
     scope.attr = function(n, v) {
       actions.push({
         impl: eo_transform_attr,
@@ -540,7 +583,9 @@ function eo_transform() {
     scope.tweenAttr = function(n, v, t) {
       actions.push({
         impl: eo_transform_attr_tween,
+        bind: eo_transform_attr_tween_bind,
         name: ns.qualify(n),
+        key: "attr." + n,
         value: v,
         tween: arguments.length < 3 ? eo_tween(n) : t
       });
@@ -560,7 +605,9 @@ function eo_transform() {
     scope.tweenStyle = function(n, v, p, t) {
       actions.push({
         impl: eo_transform_style_tween,
+        bind: eo_transform_style_tween_bind,
         name: n,
+        key: "style." + n,
         value: v,
         priority: arguments.length < 3 ? null : p,
         tween: arguments.length < 4 ? eo_tween(n) : t
@@ -687,7 +734,7 @@ function eo_transform() {
 
   transform.apply = function() {
     eo_transform_stack.unshift(null);
-    eo_transform_actions(actions, [{node: document, index: 0}]);
+    eo_transform_impl(actions, [{node: document, index: 0}]);
     eo_transform_stack.shift();
     return transform;
   };
@@ -695,19 +742,12 @@ function eo_transform() {
   return transform;
 }
 
-eo.select = function(s) {
-  return eo_transform().select(s);
-};
-
-eo.selectAll = function(s) {
-  return eo_transform().selectAll(s);
-};
-function eo_transform_actions(actions, nodes) {
+function eo_transform_impl(actions, nodes) {
   var n = actions.length,
       i; // current index
-  for (i = 0; i < n; ++i) actions[i].impl(nodes);
+  for (i = 0; i < n; ++i) actions[i].impl(nodes, eo_transform_impl);
 }
-function eo_transform_add(nodes) {
+function eo_transform_add(nodes, pass) {
   var m = nodes.length,
       n = this.name,
       childNodes = [],
@@ -725,7 +765,7 @@ function eo_transform_add(nodes) {
       c.node = (c.parentNode = o.node).appendChild(document.createElement(n));
     }
   }
-  eo_transform_actions(this.actions, childNodes);
+  pass(this.actions, childNodes);
 }
 function eo_transform_attr(nodes) {
   var m = nodes.length,
@@ -774,48 +814,51 @@ function eo_transform_attr(nodes) {
 function eo_transform_attr_tween(nodes) {
   var m = nodes.length,
       n = this.name,
-      v = this.value,
-      T = this.tween,
-      t = this.tweens,
+      k = this.key,
       i, // current index
       o; // current node
-
-  if (!t) {
-    t = this.tweens = [];
-    if (n.local) {
-      if (typeof v == "function") {
-        for (i = 0; i < m; ++i) {
-          eo_transform_stack[0] = (o = nodes[i]).data;
-          t.push(T(o.node.getAttributeNS(n.space, n.local), v.apply(o, eo_transform_stack)));
-        }
-      } else {
-        for (i = 0; i < m; ++i) {
-          t.push(T(nodes[i].node.getAttributeNS(n.space, n.local), v));
-        }
-      }
-    } else if (typeof v == "function") {
-      for (i = 0; i < m; ++i) {
-        eo_transform_stack[0] = (o = nodes[i]).data;
-        t.push(T(o.node.getAttribute(n), v.apply(o, eo_transform_stack)));
-      }
-    } else {
-      for (i = 0; i < m; ++i) {
-        t.push(T(nodes[i].node.getAttribute(n), v));
-      }
-    }
-  }
-
   if (n.local) {
     for (i = 0; i < m; ++i) {
-      nodes[i].node.setAttributeNS(n.space, n.local, t[i]());
+      (o = nodes[i]).node.setAttributeNS(n.space, n.local, o.tween[k]());
     }
   } else {
     for (i = 0; i < m; ++i) {
-      nodes[i].node.setAttribute(n, t[i]());
+      (o = nodes[i]).node.setAttribute(n, o.tween[k]());
     }
   }
 }
-function eo_transform_data(nodes) {
+
+function eo_transform_attr_tween_bind(nodes) {
+  var m = nodes.length,
+      n = this.name,
+      k = this.key,
+      v = this.value,
+      T = this.tween,
+      i, // current index
+      o; // current node
+  if (n.local) {
+    if (typeof v === "function") {
+      for (i = 0; i < m; ++i) {
+        eo_transform_stack[0] = o.data;
+        (o = nodes[i]).tween[k] = T(o.node.getAttributeNS(n.local, n.space), v.apply(o, eo_transform_stack));
+      }
+    } else {
+      for (i = 0; i < m; ++i) {
+        (o = nodes[i]).tween[k] = T(o.node.getAttributeNS(n.local, n.space), v);
+      }
+    }
+  } else if (typeof v === "function") {
+    for (i = 0; i < m; ++i) {
+      eo_transform_stack[0] = o.data;
+      (o = nodes[i]).tween[k] = T(o.node.getAttribute(n), v.apply(o, eo_transform_stack));
+    }
+  } else {
+    for (i = 0; i < m; ++i) {
+      (o = nodes[i]).tween[k] = T(o.node.getAttribute(n), v);
+    }
+  }
+}
+function eo_transform_data(nodes, pass) {
   var data = this.value,
       m = nodes.length,
       n, // data length
@@ -934,9 +977,35 @@ function eo_transform_data(nodes) {
     }
   }
 
-  eo_transform_actions(this.enterActions, enterNodes);
-  eo_transform_actions(this.actions, updateNodes);
-  eo_transform_actions(this.exitActions, exitNodes);
+  pass(this.enterActions, enterNodes);
+  pass(this.actions, updateNodes);
+  pass(this.exitActions, exitNodes);
+}
+
+function eo_transform_data_tween(nodes) {
+  var m = nodes.length,
+      i, // current index
+      o; // current node
+  for (i = 0; i < m; ++i) {
+    (o = nodes[i]).data = o.tween.data();
+  }
+}
+
+function eo_transform_data_tween_bind(nodes) {
+  var m = nodes.length,
+      v = this.value,
+      T = this.tween,
+      i, // current index
+      o; // current node
+  if (typeof v === "function") {
+    for (i = 0; i < m; ++i) {
+      (o = nodes[i]).tween.data = T(eo_transform_stack[0] = o.data, v.apply(o, eo_transform_stack));
+    }
+  } else {
+    for (i = 0; i < m; ++i) {
+      (o = nodes[i]).tween.data = T(o.data, v);
+    }
+  }
 }
 function eo_transform_remove(nodes) {
   var m = nodes.length,
@@ -987,7 +1056,7 @@ function eo_transform_on(nodes) {
       try {
         eo_transform_stack = stack;
         eo.event = e;
-        for (i = 0; i < n; ++i) actions[i].impl(o);
+        for (i = 0; i < n; ++i) actions[i].impl(o, eo_transform_impl);
       } finally {
         delete eo.event;
         eo_transform_stack = s;
@@ -995,7 +1064,7 @@ function eo_transform_on(nodes) {
     };
   }
 }
-function eo_transform_filter(nodes) {
+function eo_transform_filter(nodes, pass) {
   var filteredNodes = [],
       m = nodes.length,
       f = this.filter,
@@ -1005,9 +1074,13 @@ function eo_transform_filter(nodes) {
     eo_transform_stack[0] = (o = nodes[i]).data;
     if (f.apply(o, eo_transform_stack)) filteredNodes.push(o);
   }
-  eo_transform_actions(this.actions, filteredNodes);
+  pass(this.actions, filteredNodes);
 }
-function eo_transform_select(nodes) {
+eo.select = function(s) {
+  return eo_transform().select(s);
+};
+
+function eo_transform_select(nodes, pass) {
   var selectedNodes = [],
       m = nodes.length,
       s = this.selector,
@@ -1024,9 +1097,13 @@ function eo_transform_select(nodes) {
       c.node = e;
     }
   }
-  eo_transform_actions(this.actions, selectedNodes);
+  pass(this.actions, selectedNodes);
 }
-function eo_transform_select_all(nodes) {
+eo.selectAll = function(s) {
+  return eo_transform().selectAll(s);
+};
+
+function eo_transform_select_all(nodes, pass) {
   var m = nodes.length,
       s = this.selector,
       i, // the node index
@@ -1035,7 +1112,7 @@ function eo_transform_select_all(nodes) {
   eo_transform_stack.unshift(null);
   for (i = 0; i < m; ++i) {
     eo_transform_stack[1] = (o = nodes[i]).data;
-    eo_transform_actions(this.actions, eo_transform_nodes((p = o.node).querySelectorAll(s), p));
+    pass(this.actions, eo_transform_nodes((p = o.node).querySelectorAll(s), p));
   }
   eo_transform_stack.shift();
 }
@@ -1079,29 +1156,32 @@ function eo_transform_style(nodes) {
 function eo_transform_style_tween(nodes) {
   var m = nodes.length,
       n = this.name,
-      v = this.value,
+      k = this.key,
       p = this.priority,
-      T = this.tween,
-      t = this.tweens,
       i, // current index
       o; // current node
-
-  if (!t) {
-    t = this.tweens = [];
-    if (typeof v == "function") {
-      for (i = 0; i < m; ++i) {
-        eo_transform_stack[0] = (o = nodes[i]).data;
-        t.push(T(o.style.getPropertyValue(n), v.apply(o, eo_transform_stack)));
-      }
-    } else {
-      for (i = 0; i < m; ++i) {
-        t.push(T(nodes[i].node.style.getPropertyValue(n), v));
-      }
-    }
-  }
-
   for (i = 0; i < m; ++i) {
-    nodes[i].node.style.setProperty(n, t[i](), p);
+    (o = nodes[i]).node.style.setProperty(n, o.tween[k](), p);
+  }
+}
+
+function eo_transform_style_tween_bind(nodes) {
+  var m = nodes.length,
+      n = this.name,
+      k = this.key,
+      v = this.value,
+      T = this.tween,
+      i, // current index
+      o; // current node
+  if (typeof v === "function") {
+    for (i = 0; i < m; ++i) {
+      eo_transform_stack[0] = o.data;
+      (o = nodes[i]).tween[k] = T(o.node.style.getPropertyValue(n), v.apply(o, eo_transform_stack));
+    }
+  } else {
+    for (i = 0; i < m; ++i) {
+      (o = nodes[i]).tween[k] = T(o.node.style.getPropertyValue(n), v);
+    }
   }
 }
 function eo_transform_text(nodes) {
@@ -1165,7 +1245,18 @@ function eo_transform_transition(nodes) {
 
   // Bind the active transition to the node.
   function bind(interval) {
-    for (i = 0; i < m; ++i) nodes[i].node.interval = interval;
+    var s = eo_transform_stack;
+    for (i = 0; i < m; ++i) {
+      (o = nodes[i]).node.interval = interval;
+    }
+    try {
+      eo.time = 0;
+      eo_transform_stack = stack;
+      eo_transform_transition_bind(actions, nodes);
+    } finally {
+      delete eo.time;
+      eo_transform_stack = s;
+    }
   }
 
   function tickOne() {
@@ -1184,9 +1275,9 @@ function eo_transform_transition(nodes) {
         if (t > 1) t = 1;
         else d = false;
         eo.time = ease(t);
-        for (j = 0; j < n; ++j) actions[j].impl([o]);
+        for (j = 0; j < n; ++j) actions[j].impl([o], eo_transform_impl);
         if (t == 1) {
-          for (j = 0; j < k; ++j) endActions[j].impl([o]);
+          for (j = 0; j < k; ++j) endActions[j].impl([o], eo_transform_impl);
           o.delay = Infinity; // stop transitioning this node
         }
       }
@@ -1204,7 +1295,7 @@ function eo_transform_transition(nodes) {
     try {
       eo_transform_stack = stack;
       eo.time = ease(t < 0 ? 0 : t > 1 ? 1 : t);
-      for (i = 0; i < n; ++i) actions[i].impl(a);
+      for (i = 0; i < n; ++i) actions[i].impl(a, eo_transform_impl);
     } finally {
       delete eo.time;
       eo_transform_stack = s;
@@ -1213,11 +1304,26 @@ function eo_transform_transition(nodes) {
       clearInterval(interval);
       try {
         eo_transform_stack = stack;
-        for (i = 0; i < k; ++i) endActions[i].impl(a);
+        for (i = 0; i < k; ++i) endActions[i].impl(a, eo_transform_impl);
       } finally {
         eo_transform_stack = s;
       }
     }
+  }
+}
+
+function eo_transform_transition_bind(actions, nodes) {
+  var n = actions.length,
+      m = nodes.length,
+      a, // current action
+      i; // current index
+  for (i = 0; i < m; ++i) {
+    nodes[i].tween = {};
+  }
+  for (i = 0; i < n; ++i) {
+    a = actions[i];
+    if (a.bind) a.bind(nodes);
+    a.impl(nodes, eo_transform_transition_bind);
   }
 }
 })(this);

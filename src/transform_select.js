@@ -1,4 +1,8 @@
-function eo_transform_select(nodes) {
+eo.select = function(s) {
+  return eo_transform().select(s);
+};
+
+function eo_transform_select(nodes, pass) {
   var selectedNodes = [],
       m = nodes.length,
       s = this.selector,
@@ -15,5 +19,5 @@ function eo_transform_select(nodes) {
       c.node = e;
     }
   }
-  eo_transform_actions(this.actions, selectedNodes);
+  pass(this.actions, selectedNodes);
 }

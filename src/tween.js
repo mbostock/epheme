@@ -36,3 +36,33 @@ eo.tweenRgb = function(a, b) {
         + ")";
   };
 };
+
+eo.tweenObject = function(a, b) {
+  var t = {},
+      c = {},
+      k,
+      va,
+      vb;
+  for (k in a) {
+    if (k in b) {
+      va = a[k];
+      vb = b[k];
+      t[k] = typeof va === "object"
+          ? eo.tweenObject(va, vb)
+          : eo_tween(k)(va, vb);
+    } else {
+      c[k] = a[k];
+    }
+  }
+  for (k in b) {
+    if (!(k in a)) {
+      c[k] = b[k];
+    }
+  }
+  return function() {
+    var o = {};
+    for (k in t) o[k] = t[k]();
+    for (k in c) o[k] = c[k];
+    return o;
+  };
+};

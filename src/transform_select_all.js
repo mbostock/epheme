@@ -1,4 +1,8 @@
-function eo_transform_select_all(nodes) {
+eo.selectAll = function(s) {
+  return eo_transform().selectAll(s);
+};
+
+function eo_transform_select_all(nodes, pass) {
   var m = nodes.length,
       s = this.selector,
       i, // the node index
@@ -7,7 +11,7 @@ function eo_transform_select_all(nodes) {
   eo_transform_stack.unshift(null);
   for (i = 0; i < m; ++i) {
     eo_transform_stack[1] = (o = nodes[i]).data;
-    eo_transform_actions(this.actions, eo_transform_nodes((p = o.node).querySelectorAll(s), p));
+    pass(this.actions, eo_transform_nodes((p = o.node).querySelectorAll(s), p));
   }
   eo_transform_stack.shift();
 }

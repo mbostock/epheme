@@ -31,6 +31,9 @@ function eo_transform() {
   // allow selectFirstChild, selectLastChild, selectChildren?
   // allow selectNext, selectPrevious?
 
+  // TODO performance
+  // dispatch to different impl based on ns.qualify, typeof v === "function", etc.
+
   // TODO transitions
   // how to do staggered transition on line control points? (virtual nodes?)
 
@@ -58,6 +61,16 @@ function eo_transform() {
       return subscope;
     };
 
+    scope.tweenData = function(v, t) {
+      actions.push({
+        impl: eo_transform_data_tween,
+        bind: eo_transform_data_tween_bind,
+        value: v,
+        tween: arguments.length < 2 ? eo.tweenObject : t
+      });
+      return scope;
+    };
+
     scope.attr = function(n, v) {
       actions.push({
         impl: eo_transform_attr,
@@ -70,7 +83,9 @@ function eo_transform() {
     scope.tweenAttr = function(n, v, t) {
       actions.push({
         impl: eo_transform_attr_tween,
+        bind: eo_transform_attr_tween_bind,
         name: ns.qualify(n),
+        key: "attr." + n,
         value: v,
         tween: arguments.length < 3 ? eo_tween(n) : t
       });
@@ -90,7 +105,9 @@ function eo_transform() {
     scope.tweenStyle = function(n, v, p, t) {
       actions.push({
         impl: eo_transform_style_tween,
+        bind: eo_transform_style_tween_bind,
         name: n,
+        key: "style." + n,
         value: v,
         priority: arguments.length < 3 ? null : p,
         tween: arguments.length < 4 ? eo_tween(n) : t
@@ -217,7 +234,7 @@ function eo_transform() {
 
   transform.apply = function() {
     eo_transform_stack.unshift(null);
-    eo_transform_actions(actions, [{node: document, index: 0}]);
+    eo_transform_impl(actions, [{node: document, index: 0}]);
     eo_transform_stack.shift();
     return transform;
   };
@@ -225,10 +242,8 @@ function eo_transform() {
   return transform;
 }
 
-eo.select = function(s) {
-  return eo_transform().select(s);
-};
-
-eo.selectAll = function(s) {
-  return eo_transform().selectAll(s);
-};
+function eo_transform_impl(actions, nodes) {
+  var n = actions.length,
+      i; // current index
+  for (i = 0; i < n; ++i) actions[i].impl(nodes, eo_transform_impl);
+}

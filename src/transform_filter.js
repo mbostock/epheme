@@ -1,4 +1,4 @@
-function eo_transform_filter(nodes) {
+function eo_transform_filter(nodes, pass) {
   var filteredNodes = [],
       m = nodes.length,
       f = this.filter,
@@ -8,5 +8,5 @@ function eo_transform_filter(nodes) {
     eo_transform_stack[0] = (o = nodes[i]).data;
     if (f.apply(o, eo_transform_stack)) filteredNodes.push(o);
   }
-  eo_transform_actions(this.actions, filteredNodes);
+  pass(this.actions, filteredNodes);
 }
