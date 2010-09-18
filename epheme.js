@@ -261,6 +261,9 @@ eo.rgb = function(format) {
   /* Named colors. */
   if (name = eo_rgb_names[format]) return name;
 
+  /* Null or undefined. */
+  if (format == null) return eo_rgb_names.black;
+
   /* Hexadecimal colors: #rgb and #rrggbb. */
   if (format.charAt(0) == "#") {
     if (format.length == 4) {
