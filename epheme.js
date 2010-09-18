@@ -1,3 +1,6 @@
+if (!Date.now) Date.now = function() {
+  return +new Date();
+};
 if (!Object.create) Object.create = function(o) {
   /** @constructor */ function f() {}
   f.prototype = o;
@@ -475,11 +478,16 @@ function eo_transform() {
   // TODO value transforms
   // how to inspect current attr/style/text value from transform?
   // perhaps push/pop values for temporary change (e.g., :hover)?
+  // this.value retrieves current attr / style / text? or this.value()?
 
   // TODO extensibility
   // register hooks for transform extensibility outside the library?
   // how to encapsulate higher level logic (e.g., bars, wedges, charts)?
   // virtual nodes? map to canvas?
+
+  // TODO composition
+  // transform.apply(nodes) to transform specific nodes? (set root context)
+  // transform.transform(transform) to chain transforms?
 
   // TODO selectors
   // allow select / selectAll argument to be function
@@ -490,7 +498,10 @@ function eo_transform() {
   // allow selectNext, selectPrevious?
 
   // TODO transitions
-  // implicit interpolators from current -> target value
+  // eo.interpolate -> eo.tween
+  // eo.interpolateRgb -> eo.tween.rgb? eo.rgb.tween?
+  // implicit tweens from current -> target value
+  // implicit tweens could use a 'setup' hook for attr / style / text?
   // how to do staggered transition on line control points? (virtual nodes?)
 
   function transform_scope(parent, actions) {
