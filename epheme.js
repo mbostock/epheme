@@ -253,10 +253,8 @@ eo.tweenObject = function(a, b) {
     }
   }
   return function() {
-    var o = {};
-    for (k in t) o[k] = t[k]();
-    for (k in c) o[k] = c[k];
-    return o;
+    for (k in t) c[k] = t[k]();
+    return c;
   };
 };
 eo.rgb = function(format) {
