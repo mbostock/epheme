@@ -19,6 +19,10 @@ function eo_tween(n) {
   return n in eo_tween_rgb || /\bcolor\b/.test(n) ? eo.tweenRgb : eo.tween;
 }
 
+function eo_tweenObject(a, b) {
+  return (typeof a === "object" ? eo.tweenObject : eo.tween)(a, b);
+}
+
 eo.tweenRgb = function(a, b) {
   a = eo_rgb(a);
   b = eo_rgb(b);
