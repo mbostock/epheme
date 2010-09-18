@@ -33,8 +33,8 @@ var t = eo.select("div")
   .transition()
     .ease("bounce")
     .duration(2000)
-    .style.tween("width", "100%")
-    .style.tween("background-color", "brown")
+    .tweenStyle("width", "100%")
+    .tweenStyle("background-color", "brown")
     .text(function() { return ~~(eo.time * 100) + "\u00a0"; })
   .apply();
 

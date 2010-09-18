@@ -93,8 +93,8 @@ var dots = vis.selectAll("circle.dot")
   .transition()
     .delay(function() { return this.index * 3; })
     .duration(750)
-    .attr.tween("stroke-opacity", 1)
-    .attr.tween("r", 4.5);
+    .tweenAttr("stroke-opacity", 1)
+    .tweenAttr("r", 4.5);
 
 vis.apply();
 

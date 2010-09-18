@@ -209,8 +209,26 @@ var eo_tween_rgb = {
 };
 
 function eo_tween(n) {
-  return n in eo_tween_rgb || /\bcolor\b/.test(n) ? eo.rgb.tween : eo.tween;
+  return n in eo_tween_rgb || /\bcolor\b/.test(n) ? eo.tweenRgb : eo.tween;
 }
+
+eo.tweenRgb = function(a, b) {
+  a = eo.rgb(a);
+  b = eo.rgb(b);
+  var ar = a.r,
+      ag = a.g,
+      ab = a.b,
+      br = b.r - ar,
+      bg = b.g - ag,
+      bb = b.b - ab;
+  return function() {
+    var t = eo.time;
+    return "rgb(" + Math.round(ar + br * t)
+        + "," + Math.round(ag + bg * t)
+        + "," + Math.round(ab + bb * t)
+        + ")";
+  };
+};
 eo.rgb = function(format) {
   var r, // red channel; int in [0, 255]
       g, // green channel; int in [0, 255]
@@ -447,24 +465,6 @@ var eo_rgb_names = {
 };
 
 for (var x in eo_rgb_names) eo_rgb_names[x] = eo.rgb(eo_rgb_names[x]);
-
-eo.rgb.tween = function(a, b) {
-  a = eo.rgb(a);
-  b = eo.rgb(b);
-  var ar = a.r,
-      ag = a.g,
-      ab = a.b,
-      br = b.r - ar,
-      bg = b.g - ag,
-      bb = b.b - ab;
-  return function() {
-    var t = eo.time;
-    return "rgb(" + Math.round(ar + br * t)
-        + "," + Math.round(ag + bg * t)
-        + "," + Math.round(ab + bb * t)
-        + ")";
-  };
-};
 var eo_transform_stack = [];
 
 function eo_transform() {
@@ -534,7 +534,7 @@ function eo_transform() {
       return scope;
     };
 
-    scope.attr.tween = function(n, v, t) {
+    scope.tweenAttr = function(n, v, t) {
       actions.push({
         impl: eo_transform_attr_tween,
         name: ns.qualify(n),
@@ -554,7 +554,7 @@ function eo_transform() {
       return scope;
     };
 
-    scope.style.tween = function(n, v, p, t) {
+    scope.tweenStyle = function(n, v, p, t) {
       actions.push({
         impl: eo_transform_style_tween,
         name: n,

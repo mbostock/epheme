@@ -67,7 +67,7 @@ function eo_transform() {
       return scope;
     };
 
-    scope.attr.tween = function(n, v, t) {
+    scope.tweenAttr = function(n, v, t) {
       actions.push({
         impl: eo_transform_attr_tween,
         name: ns.qualify(n),
@@ -87,7 +87,7 @@ function eo_transform() {
       return scope;
     };
 
-    scope.style.tween = function(n, v, p, t) {
+    scope.tweenStyle = function(n, v, p, t) {
       actions.push({
         impl: eo_transform_style_tween,
         name: n,

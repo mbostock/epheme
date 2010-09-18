@@ -16,5 +16,23 @@ var eo_tween_rgb = {
 };
 
 function eo_tween(n) {
-  return n in eo_tween_rgb || /\bcolor\b/.test(n) ? eo.rgb.tween : eo.tween;
+  return n in eo_tween_rgb || /\bcolor\b/.test(n) ? eo.tweenRgb : eo.tween;
 }
+
+eo.tweenRgb = function(a, b) {
+  a = eo.rgb(a);
+  b = eo.rgb(b);
+  var ar = a.r,
+      ag = a.g,
+      ab = a.b,
+      br = b.r - ar,
+      bg = b.g - ag,
+      bb = b.b - ab;
+  return function() {
+    var t = eo.time;
+    return "rgb(" + Math.round(ar + br * t)
+        + "," + Math.round(ag + bg * t)
+        + "," + Math.round(ab + bb * t)
+        + ")";
+  };
+};
