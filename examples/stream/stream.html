@@ -51,13 +51,17 @@ vis.selectAll("path.area")
 
 vis.apply();
 
-eo.selectAll("path.area")
-    .data(data)
+window.addEventListener("keypress", eo.selectAll("path.area")
+    .data(function() {
+      var prev = data;
+      data = data2;
+      return data2 = prev;
+    })
   .transition()
-    .duration(5000)
-    .tweenData(function() { return data2[this.index]; })
+    .duration(2500)
+    .tweenData(function() { return data[this.index]; })
     .attr("d", area)
-  .apply();
+  .apply, false);
 
 function area(layer) {
   var p = [],
