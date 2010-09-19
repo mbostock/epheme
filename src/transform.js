@@ -66,7 +66,7 @@ function eo_transform() {
         impl: eo_transform_data_tween,
         bind: eo_transform_data_tween_bind,
         value: v,
-        tween: arguments.length < 2 ? eo_tweenObject : t
+        tween: arguments.length < 2 ? eo_tweenByValue : t
       });
       return scope;
     };
@@ -87,7 +87,7 @@ function eo_transform() {
         name: ns.qualify(n),
         key: "attr." + n,
         value: v,
-        tween: arguments.length < 3 ? eo_tween(n) : t
+        tween: arguments.length < 3 ? eo_tweenByName(n) : t
       });
       return scope;
     };
@@ -110,7 +110,7 @@ function eo_transform() {
         key: "style." + n,
         value: v,
         priority: arguments.length < 3 ? null : p,
-        tween: arguments.length < 4 ? eo_tween(n) : t
+        tween: arguments.length < 4 ? eo_tweenByName(n) : t
       });
       return scope;
     };

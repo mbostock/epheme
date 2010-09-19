@@ -191,32 +191,16 @@ function bounce(t) {
       : t < 2.5 / 2.75 ? 7.5625 * (t -= 2.25 / 2.75) * t + .9375
       : 7.5625 * (t -= 2.625 / 2.75) * t + .984375;
 }
-eo.tween = function(a, b) {
-  var u = eo_tween_digits.exec(a)[1];
+eo.interpolate = function(a, b) {
+  var u = eo_interpolate_digits.exec(a)[1];
   a = parseFloat(a);
   b = parseFloat(b) - a;
   return u.length
-      ? function() { return a + b * eo.time + u; }
-      : function() { return a + b * eo.time; };
+      ? function(t) { return a + b * t + u; }
+      : function(t) { return a + b * t; };
 };
 
-var eo_tween_digits = /[-+]?\d*\.?\d*(?:[eE]\d+)?(.*)/;
-
-var eo_tween_rgb = {
-  "background": 1,
-  "fill": 1,
-  "stroke": 1
-};
-
-function eo_tween(n) {
-  return n in eo_tween_rgb || /\bcolor\b/.test(n) ? eo.tweenRgb : eo.tween;
-}
-
-function eo_tweenObject(a, b) {
-  return (typeof a === "object" ? eo.tweenObject : eo.tween)(a, b);
-}
-
-eo.tweenRgb = function(a, b) {
+eo.interpolateRgb = function(a, b) {
   a = eo_rgb(a);
   b = eo_rgb(b);
   var ar = a.r,
@@ -225,8 +209,7 @@ eo.tweenRgb = function(a, b) {
       br = b.r - ar,
       bg = b.g - ag,
       bb = b.b - ab;
-  return function() {
-    var t = eo.time;
+  return function(t) {
     return "rgb(" + Math.round(ar + br * t)
         + "," + Math.round(ag + bg * t)
         + "," + Math.round(ab + bb * t)
@@ -234,8 +217,33 @@ eo.tweenRgb = function(a, b) {
   };
 };
 
-eo.tweenObject = function(a, b) {
-  var t = {},
+eo.interpolateArray = function(a, b) {
+  var x = [],
+      c = [],
+      na = a.length,
+      nb = b.length,
+      n0 = Math.min(a.length, b.length),
+      i,
+      va,
+      vb;
+  for (i = 0; i < n0; ++i) {
+    va = a[i];
+    vb = b[i];
+    x.push(typeof va === "object"
+        ? eo.interpolateObject(va, vb)
+        : eo.interpolate(va, vb));
+  }
+  for (; i < na; ++i) c[i] = a[i];
+  for (; i < nb; ++i) c[i] = b[i];
+  return function(t) {
+    for (i = 0; i < n0; ++i) c[i] = x[i](t);
+    return c;
+  };
+};
+
+eo.interpolateObject = function(a, b) {
+  if (a instanceof Array) return eo.interpolateArray(a, b);
+  var i = {},
       c = {},
       k,
       va,
@@ -244,9 +252,9 @@ eo.tweenObject = function(a, b) {
     if (k in b) {
       va = a[k];
       vb = b[k];
-      t[k] = typeof va === "object"
-          ? eo.tweenObject(va, vb)
-          : eo_tween(k)(va, vb);
+      i[k] = typeof va === "object"
+          ? eo.interpolateObject(va, vb)
+          : eo_interpolateByName(k)(va, vb);
     } else {
       c[k] = a[k];
     }
@@ -256,11 +264,38 @@ eo.tweenObject = function(a, b) {
       c[k] = b[k];
     }
   }
-  return function() {
-    for (k in t) c[k] = t[k]();
+  return function(t) {
+    for (k in i) c[k] = i[k](t);
     return c;
   };
-};
+}
+
+var eo_interpolate_digits = /[-+]?\d*\.?\d*(?:[eE][-]?\d+)?(.*)/,
+    eo_interpolate_rgb = {background: 1, fill: 1, stroke: 1};
+
+function eo_interpolateByName(n) {
+  return n in eo_interpolate_rgb || /\bcolor\b/.test(n) ? eo.interpolateRgb : eo.interpolate;
+}
+eo.tween = eo_tweenInterpolate(eo.interpolate);
+eo.tweenRgb = eo_tweenInterpolate(eo.interpolateRgb);
+eo.tweenObject = eo_tweenInterpolate(eo.interpolateObject);
+
+function eo_tweenInterpolate(I) {
+  return function(a, b) {
+    var i = I(a, b);
+    return function() {
+      return i(eo.time);
+    };
+  };
+}
+
+function eo_tweenByName(n) {
+  return n in eo_interpolate_rgb || /\bcolor\b/.test(n) ? eo.tweenRgb : eo.tween;
+}
+
+function eo_tweenByValue(a, b) {
+  return (typeof a === "object" ? eo.tweenObject : eo.tween)(a, b);
+}
 function eo_rgb(format) {
   var r, // red channel; int in [0, 255]
       g, // green channel; int in [0, 255]
@@ -568,7 +603,7 @@ function eo_transform() {
         impl: eo_transform_data_tween,
         bind: eo_transform_data_tween_bind,
         value: v,
-        tween: arguments.length < 2 ? eo_tweenObject : t
+        tween: arguments.length < 2 ? eo_tweenByValue : t
       });
       return scope;
     };
@@ -589,7 +624,7 @@ function eo_transform() {
         name: ns.qualify(n),
         key: "attr." + n,
         value: v,
-        tween: arguments.length < 3 ? eo_tween(n) : t
+        tween: arguments.length < 3 ? eo_tweenByName(n) : t
       });
       return scope;
     };
@@ -612,7 +647,7 @@ function eo_transform() {
         key: "style." + n,
         value: v,
         priority: arguments.length < 3 ? null : p,
-        tween: arguments.length < 4 ? eo_tween(n) : t
+        tween: arguments.length < 4 ? eo_tweenByName(n) : t
       });
       return scope;
     };

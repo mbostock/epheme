@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Streamgraph</title>
+    <script type="text/javascript" src="../../epheme.js"></script>
+    <script type="text/javascript" src="stream.js"></script>
+    <script type="text/javascript" src="stack.js"></script>
+    <style type="text/css">
+
+body {
+  margin: 0;
+  font: 10px sans-serif;
+}
+
+svg {
+  display: block;
+}
+
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript">
+
+var eo = org.epheme;
+
+var n = 20, // number of layers
+    m = 150, // number of samples per layer
+    data = stack(stream_layers(n, m), null, "wiggle"),
+    data2 = stack(stream_layers(n, m), null, "wiggle"),
+    color = eo.interpolateRgb("#aad", "#556");
+
+var w = document.documentElement.clientWidth,
+    h = document.documentElement.clientHeight,
+    mx = m - 1,
+    my = max(data.concat(data2), function(d) { return max(d, function(d) { return d.y0 + d.y; }); }),
+    x = function(d) { return d.x * w / mx; },
+    y0 = function(d) { if (isNaN(d.y0)) fail(); return h - d.y0 * h / my; },
+    y1 = function(d) { if (isNaN(d.y0) || isNaN(d.y)) fail(); return h - (d.y + d.y0) * h / my; };
+
+var vis = eo.select("body")
+  .add("svg:svg")
+    .attr("width", w)
+    .attr("height", h);
+
+vis.selectAll("path.area")
+    .data(data)
+  .enter.add("svg:path")
+    .attr("class", "area")
+    .attr("fill", function() { return color(Math.random()); })
+    .attr("d", area);
+
+vis.apply();
+
+eo.selectAll("path.area")
+    .data(data)
+  .transition()
+    .duration(5000)
+    .tweenData(function() { return data2[this.index]; })
+    .attr("d", area)
+  .apply();
+
+function area(layer) {
+  var p = [],
+      i = 1,
+      d = layer[0],
+      n = layer.length;
+  p.push("M", x(d), "," + y0(d) + "V", y1(d));
+  while (i++ < n, d = layer[i]) p.push("L", x(d), ",", y1(d));
+  p.push("V" + y0(layer[n - 1]));
+  while (--i, d = layer[i]) p.push("L", x(d), ",", y0(d));
+  p.push("Z");
+  return p.join("");
+}
+
+function max(array, f) {
+  var i = 1,
+      n = array.length,
+      j = 0,
+      v = f(array[0]),
+      k;
+  for (; i < n; ++i) {
+    k = f(array[i]);
+    if (k > v) {
+      j = i;
+      v = k;
+    }
+  }
+  return v;
+}
+
+    </script>
+  </body>
+</html>

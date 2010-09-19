@@ -11,6 +11,7 @@ SRC_FILES = \
 	src/ns.js \
 	src/dispatch.js \
 	src/ease.js \
+	src/interpolate.js \
 	src/tween.js \
 	src/rgb.js \
 	src/transform.js \
