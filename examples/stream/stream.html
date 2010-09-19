@@ -8,12 +8,7 @@
     <style type="text/css">
 
 body {
-  margin: 0;
   font: 10px sans-serif;
-}
-
-svg {
-  display: block;
 }
 
     </style>
@@ -29,8 +24,8 @@ var n = 20, // number of layers
     data2 = stack(stream_layers(n, m), null, "wiggle"),
     color = eo.interpolateRgb("#aad", "#556");
 
-var w = document.documentElement.clientWidth,
-    h = document.documentElement.clientHeight,
+var w = 960,
+    h = 500,
     mx = m - 1,
     my = max(data.concat(data2), function(d) { return max(d, function(d) { return d.y0 + d.y; }); }),
     x = function(d) { return d.x * w / mx; },
@@ -65,7 +60,7 @@ window.addEventListener("keypress", eo.selectAll("path.area")
 
 function area(layer) {
   var p = [],
-      i = 1,
+      i = 0,
       d = layer[0],
       n = layer.length;
   p.push("M", x(d), "," + y0(d) + "V", y1(d));
