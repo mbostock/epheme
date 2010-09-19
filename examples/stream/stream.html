@@ -34,8 +34,8 @@ var w = document.documentElement.clientWidth,
     mx = m - 1,
     my = max(data.concat(data2), function(d) { return max(d, function(d) { return d.y0 + d.y; }); }),
     x = function(d) { return d.x * w / mx; },
-    y0 = function(d) { if (isNaN(d.y0)) fail(); return h - d.y0 * h / my; },
-    y1 = function(d) { if (isNaN(d.y0) || isNaN(d.y)) fail(); return h - (d.y + d.y0) * h / my; };
+    y0 = function(d) { return h - d.y0 * h / my; },
+    y1 = function(d) { return h - (d.y + d.y0) * h / my; };
 
 var vis = eo.select("body")
   .add("svg:svg")
