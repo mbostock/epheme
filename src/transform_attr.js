@@ -70,8 +70,8 @@ function eo_transform_attr_tween_bind(nodes) {
   if (n.local) {
     if (typeof v === "function") {
       for (i = 0; i < m; ++i) {
-        eo_transform_stack[0] = o.data;
-        (o = nodes[i]).tween[k] = T(o.node.getAttributeNS(n.local, n.space), v.apply(o, eo_transform_stack));
+        eo_transform_stack[0] = (o = nodes[i]).data;
+        o.tween[k] = T(o.node.getAttributeNS(n.local, n.space), v.apply(o, eo_transform_stack));
       }
     } else {
       for (i = 0; i < m; ++i) {
@@ -80,8 +80,8 @@ function eo_transform_attr_tween_bind(nodes) {
     }
   } else if (typeof v === "function") {
     for (i = 0; i < m; ++i) {
-      eo_transform_stack[0] = o.data;
-      (o = nodes[i]).tween[k] = T(o.node.getAttribute(n), v.apply(o, eo_transform_stack));
+      eo_transform_stack[0] = (o = nodes[i]).data;
+      o.tween[k] = T(o.node.getAttribute(n), v.apply(o, eo_transform_stack));
     }
   } else {
     for (i = 0; i < m; ++i) {

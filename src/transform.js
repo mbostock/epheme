@@ -66,7 +66,7 @@ function eo_transform() {
         impl: eo_transform_data_tween,
         bind: eo_transform_data_tween_bind,
         value: v,
-        tween: arguments.length < 2 ? eo_tweenByValue : t
+        tween: arguments.length < 2 ? eo.tween : t
       });
       return scope;
     };
