@@ -32,7 +32,7 @@ var ns = {
   }
 
 };
-function eo_dispatch(that) {
+eo.dispatch = function(that) {
   var types = {};
 
   that.on = function(type, handler) {
@@ -68,7 +68,7 @@ function eo_dispatch(that) {
   };
 
   return that;
-}
+};
 /*
  * TERMS OF USE - EASING EQUATIONS
  *
