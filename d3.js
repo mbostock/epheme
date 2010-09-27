@@ -227,14 +227,24 @@ d3.interpolateString = function(a, b) {
   for (i = 0, n = q.length; (m = d3_interpolate_number.exec(a)) && i < n; ++i) {
     o = q[i];
     if (o.x == m[0]) { // The numbers match, so coallesce.
-      if (s[o.i + 1] == null) { // This match is followed by another number.
-        s[o.i - 1] += o.x;
-        s.splice(o.i, 1);
-        for (j = i + 1; j < n; ++j) q[j].i--;
-      } else { // This match is followed by a string, so coallesce twice.
-        s[o.i - 1] += o.x + s[o.i + 1];
-        s.splice(o.i, 2);
-        for (j = i + 1; j < n; ++j) q[j].i -= 2;
+      if (o.i) {
+        if (s[o.i + 1] == null) { // This match is followed by another number.
+          s[o.i - 1] += o.x;
+          s.splice(o.i, 1);
+          for (j = i + 1; j < n; ++j) q[j].i--;
+        } else { // This match is followed by a string, so coallesce twice.
+          s[o.i - 1] += o.x + s[o.i + 1];
+          s.splice(o.i, 2);
+          for (j = i + 1; j < n; ++j) q[j].i -= 2;
+        }
+      } else {
+          if (s[o.i + 1] == null) { // This match is followed by another number.
+          s[o.i] = o.x;
+        } else { // This match is followed by a string, so coallesce twice.
+          s[o.i] = o.x + s[o.i + 1];
+          s.splice(o.i + 1, 1);
+          for (j = i + 1; j < n; ++j) q[j].i--;
+        }
       }
       q.splice(i, 1);
       n--;
@@ -242,6 +252,18 @@ d3.interpolateString = function(a, b) {
     } else {
       o.x = d3.interpolateNumber(parseFloat(m[0]), parseFloat(o.x));
     }
+  }
+
+  // Remove any numbers in b not found in a.
+  while (i < n) {
+    o = q.pop();
+    if (s[o.i + 1] == null) { // This match is followed by another number.
+      s[o.i] = o.x;
+    } else { // This match is followed by a string, so coallesce twice.
+      s[o.i] = o.x + s[o.i + 1];
+      s.splice(o.i + 1, 1);
+    }
+    n--;
   }
 
   // Special optimization for only a single match.
