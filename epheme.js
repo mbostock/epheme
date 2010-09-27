@@ -1253,8 +1253,8 @@ function eo_transform_style_tween_bind(nodes) {
       o; // current node
   if (typeof v === "function") {
     for (i = 0; i < m; ++i) {
-      eo_transform_stack[0] = o.data;
-      (o = nodes[i]).tween[k] = T(o.node.style.getPropertyValue(n), v.apply(o, eo_transform_stack));
+      eo_transform_stack[0] = (o = nodes[i]).data;
+      o.tween[k] = T(o.node.style.getPropertyValue(n), v.apply(o, eo_transform_stack));
     }
   } else {
     for (i = 0; i < m; ++i) {
