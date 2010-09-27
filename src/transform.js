@@ -1,6 +1,6 @@
-var eo_transform_stack = [];
+var d3_transform_stack = [];
 
-function eo_transform() {
+function d3_transform() {
   var transform = {},
       actions = [];
 
@@ -44,7 +44,7 @@ function eo_transform() {
 
     scope.data = function(v) {
       var subscope, action = {
-        impl: eo_transform_data,
+        impl: d3_transform_data,
         value: v,
         actions: [],
         enterActions: [],
@@ -63,17 +63,17 @@ function eo_transform() {
 
     scope.tweenData = function(v, t) {
       actions.push({
-        impl: eo_transform_data_tween,
-        bind: eo_transform_data_tween_bind,
+        impl: d3_transform_data_tween,
+        bind: d3_transform_data_tween_bind,
         value: v,
-        tween: arguments.length < 2 ? eo.tween : t
+        tween: arguments.length < 2 ? d3.tween : t
       });
       return scope;
     };
 
     scope.attr = function(n, v) {
       actions.push({
-        impl: eo_transform_attr,
+        impl: d3_transform_attr,
         name: ns.qualify(n),
         value: v
       });
@@ -82,19 +82,19 @@ function eo_transform() {
 
     scope.tweenAttr = function(n, v, t) {
       actions.push({
-        impl: eo_transform_attr_tween,
-        bind: eo_transform_attr_tween_bind,
+        impl: d3_transform_attr_tween,
+        bind: d3_transform_attr_tween_bind,
         name: ns.qualify(n),
         key: "attr." + n,
         value: v,
-        tween: arguments.length < 3 ? eo_tweenByName(n) : t
+        tween: arguments.length < 3 ? d3_tweenByName(n) : t
       });
       return scope;
     };
 
     scope.style = function(n, v, p) {
       actions.push({
-        impl: eo_transform_style,
+        impl: d3_transform_style,
         name: n,
         value: v,
         priority: arguments.length < 3 ? null : p
@@ -104,20 +104,20 @@ function eo_transform() {
 
     scope.tweenStyle = function(n, v, p, t) {
       actions.push({
-        impl: eo_transform_style_tween,
-        bind: eo_transform_style_tween_bind,
+        impl: d3_transform_style_tween,
+        bind: d3_transform_style_tween_bind,
         name: n,
         key: "style." + n,
         value: v,
         priority: arguments.length < 3 ? null : p,
-        tween: arguments.length < 4 ? eo_tweenByName(n) : t
+        tween: arguments.length < 4 ? d3_tweenByName(n) : t
       });
       return scope;
     };
 
     scope.add = function(n, v) {
       var action = {
-        impl: eo_transform_add,
+        impl: d3_transform_add,
         name: ns.qualify(n),
         value: v,
         actions: []
@@ -128,7 +128,7 @@ function eo_transform() {
 
     scope.remove = function(s) {
       actions.push({
-        impl: eo_transform_remove,
+        impl: d3_transform_remove,
         selector: s
       });
       return scope;
@@ -136,7 +136,7 @@ function eo_transform() {
 
     scope.text = function(v) {
       actions.push({
-        impl: eo_transform_text,
+        impl: d3_transform_text,
         value: v
       });
       return scope;
@@ -144,7 +144,7 @@ function eo_transform() {
 
     scope.on = function(t) {
       var action = {
-        impl: eo_transform_on,
+        impl: d3_transform_on,
         type: t,
         actions: []
       };
@@ -154,7 +154,7 @@ function eo_transform() {
 
     scope.filter = function(f) {
       var action = {
-        impl: eo_transform_filter,
+        impl: d3_transform_filter,
         filter: f,
         actions: []
       };
@@ -164,7 +164,7 @@ function eo_transform() {
 
     scope.select = function(s) {
       var action = {
-        impl: eo_transform_select,
+        impl: d3_transform_select,
         selector: s,
         actions: []
       };
@@ -174,7 +174,7 @@ function eo_transform() {
 
     scope.selectAll = function(s) {
       var action = {
-        impl: eo_transform_select_all,
+        impl: d3_transform_select_all,
         selector: s,
         actions: []
       };
@@ -184,10 +184,10 @@ function eo_transform() {
 
     scope.transition = function() {
       var subscope, action = {
-        impl: eo_transform_transition,
+        impl: d3_transform_transition,
         actions: [],
         endActions: [],
-        ease: eo.ease("cubic-in-out"),
+        ease: d3.ease("cubic-in-out"),
         delay: 0,
         duration: 250
       };
@@ -195,7 +195,7 @@ function eo_transform() {
       subscope = transform_scope(scope, action.actions);
       subscope.end = transform_scope(scope, action.endActions);
       subscope.ease = function(x) {
-        action.ease = typeof x == "string" ? eo.ease(x) : x;
+        action.ease = typeof x == "string" ? d3.ease(x) : x;
         return subscope;
       };
       subscope.delay = function(x) {
@@ -214,7 +214,7 @@ function eo_transform() {
 
   transform.select = function(s) {
     var action = {
-      impl: eo_transform_select,
+      impl: d3_transform_select,
       selector: s,
       actions: []
     };
@@ -224,7 +224,7 @@ function eo_transform() {
 
   transform.selectAll = function(s) {
     var action = {
-      impl: eo_transform_select_all,
+      impl: d3_transform_select_all,
       selector: s,
       actions: []
     };
@@ -233,17 +233,17 @@ function eo_transform() {
   };
 
   transform.apply = function() {
-    eo_transform_stack.unshift(null);
-    eo_transform_impl(actions, [{node: document, index: 0}]);
-    eo_transform_stack.shift();
+    d3_transform_stack.unshift(null);
+    d3_transform_impl(actions, [{node: document, index: 0}]);
+    d3_transform_stack.shift();
     return transform;
   };
 
   return transform;
 }
 
-function eo_transform_impl(actions, nodes) {
+function d3_transform_impl(actions, nodes) {
   var n = actions.length,
       i; // current index
-  for (i = 0; i < n; ++i) actions[i].impl(nodes, eo_transform_impl);
+  for (i = 0; i < n; ++i) actions[i].impl(nodes, d3_transform_impl);
 }

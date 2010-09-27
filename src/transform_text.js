@@ -1,4 +1,4 @@
-function eo_transform_text(nodes) {
+function d3_transform_text(nodes) {
   var m = nodes.length,
       v = this.value,
       i, // current node index
@@ -7,8 +7,8 @@ function eo_transform_text(nodes) {
   if (typeof v == "function") {
     for (i = 0; i < m; ++i) {
       o = nodes[i];
-      eo_transform_stack[0] = o.data;
-      x = v.apply(o, eo_transform_stack);
+      d3_transform_stack[0] = o.data;
+      x = v.apply(o, d3_transform_stack);
       o = o.node;
       while (o.lastChild) o.removeChild(o.lastChild);
       o.appendChild(document.createTextNode(x));

@@ -1,4 +1,4 @@
-eo.dispatch = function(that) {
+d3.dispatch = function(that) {
   var types = {};
 
   that.on = function(type, handler) {

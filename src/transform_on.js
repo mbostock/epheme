@@ -1,11 +1,11 @@
-function eo_transform_on(nodes) {
+function d3_transform_on(nodes) {
   var actions = this.actions,
       n = actions.length,
       m = nodes.length,
       t = "on" + this.type,
       i = 0, // current index
       o, // curent node
-      stack = eo_transform_stack.slice(); // stack snapshot
+      stack = d3_transform_stack.slice(); // stack snapshot
 
   if (n) {
     for (; i < m; ++i) {
@@ -20,14 +20,14 @@ function eo_transform_on(nodes) {
 
   function bind(o) {
     return function(e) {
-      var s = eo_transform_stack;
+      var s = d3_transform_stack;
       try {
-        eo_transform_stack = stack;
-        eo.event = e;
-        for (i = 0; i < n; ++i) actions[i].impl(o, eo_transform_impl);
+        d3_transform_stack = stack;
+        d3.event = e;
+        for (i = 0; i < n; ++i) actions[i].impl(o, d3_transform_impl);
       } finally {
-        delete eo.event;
-        eo_transform_stack = s;
+        delete d3.event;
+        d3_transform_stack = s;
       }
     };
   }

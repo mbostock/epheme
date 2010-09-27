@@ -1,22 +1,22 @@
-eo.selectAll = function(s) {
-  return eo_transform().selectAll(s);
+d3.selectAll = function(s) {
+  return d3_transform().selectAll(s);
 };
 
-function eo_transform_select_all(nodes, pass) {
+function d3_transform_select_all(nodes, pass) {
   var m = nodes.length,
       s = this.selector,
       i, // the node index
       o, // the current node
       p; // the current node
-  eo_transform_stack.unshift(null);
+  d3_transform_stack.unshift(null);
   for (i = 0; i < m; ++i) {
-    eo_transform_stack[1] = (o = nodes[i]).data;
-    pass(this.actions, eo_transform_nodes((p = o.node).querySelectorAll(s), p));
+    d3_transform_stack[1] = (o = nodes[i]).data;
+    pass(this.actions, d3_transform_nodes((p = o.node).querySelectorAll(s), p));
   }
-  eo_transform_stack.shift();
+  d3_transform_stack.shift();
 }
 
-function eo_transform_nodes(x, p) {
+function d3_transform_nodes(x, p) {
   var nodes = [],
       i = 0,
       n = x.length;

@@ -28,16 +28,16 @@ SRC_FILES = \
 	src/transform_transition.js \
 	src/end.js
 
-all: epheme.js epheme.min.js
+all: d3.js d3.min.js
 
-epheme.min.js: epheme.js Makefile src/externs.js
+d3.min.js: d3.js Makefile src/externs.js
 	rm -f $@
 	$(JS_COMPILER) --js $< --js_output_file $@
 
-epheme.js: $(SRC_FILES) Makefile
+d3.js: $(SRC_FILES) Makefile
 	rm -f $@
 	cat $(SRC_FILES) >> $@
 	chmod a-w $@
 
 clean:
-	rm -f epheme.js epheme.min.js
+	rm -f d3.js d3.min.js

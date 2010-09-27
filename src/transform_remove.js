@@ -1,4 +1,4 @@
-function eo_transform_remove(nodes) {
+function d3_transform_remove(nodes) {
   var m = nodes.length,
       s = this.selector,
       r, // the selected nodes (for selectors)

@@ -56,7 +56,7 @@ var mode = {
   "out-int": function(f) { return reflect(reverse(f)); }
 };
 
-eo.ease = function(name) {
+d3.ease = function(name) {
   var i = name.indexOf("-"),
       t = i >= 0 ? name.substring(0, i) : name,
       m = i >= 0 ? name.substring(i + 1) : "in";

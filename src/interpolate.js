@@ -1,16 +1,16 @@
-eo.interpolate = function(a, b) {
-  if (typeof b == "number") return eo.interpolateNumber(+a, b);
-  if (typeof b == "string") return eo.interpolateString(String(a), b);
-  if (b instanceof Array) return eo.interpolateArray(a, b);
-  return eo.interpolateObject(a, b);
+d3.interpolate = function(a, b) {
+  if (typeof b == "number") return d3.interpolateNumber(+a, b);
+  if (typeof b == "string") return d3.interpolateString(String(a), b);
+  if (b instanceof Array) return d3.interpolateArray(a, b);
+  return d3.interpolateObject(a, b);
 };
 
-eo.interpolateNumber = function(a, b) {
+d3.interpolateNumber = function(a, b) {
   b -= a;
   return function(t) { return a + b * t; };
 };
 
-eo.interpolateString = function(a, b) {
+d3.interpolateString = function(a, b) {
   var m, // current match
       i, // current index
       j, // current index (for coallescing)
@@ -22,16 +22,16 @@ eo.interpolateString = function(a, b) {
       o;
 
   // Find all numbers in b.
-  for (i = 0; m = eo_interpolate_number.exec(b); ++i) {
+  for (i = 0; m = d3_interpolate_number.exec(b); ++i) {
     if (m.index) s.push(b.substring(s0, s1 = m.index));
     q.push({i: s.length, x: m[0]});
     s.push(null);
-    s0 = eo_interpolate_number.lastIndex;
+    s0 = d3_interpolate_number.lastIndex;
   }
   if (s0 < b.length) s.push(b.substring(s0));
 
   // Find all numbers in a.
-  for (i = 0, n = q.length; (m = eo_interpolate_number.exec(a)) && i < n; ++i) {
+  for (i = 0, n = q.length; (m = d3_interpolate_number.exec(a)) && i < n; ++i) {
     o = q[i];
     if (o.x == m[0]) { // The numbers match, so coallesce.
       if (s[o.i + 1] == null) { // This match is followed by another number.
@@ -47,7 +47,7 @@ eo.interpolateString = function(a, b) {
       n--;
       i--;
     } else {
-      o.x = eo.interpolateNumber(parseFloat(m[0]), parseFloat(o.x));
+      o.x = d3.interpolateNumber(parseFloat(m[0]), parseFloat(o.x));
     }
   }
 
@@ -63,9 +63,9 @@ eo.interpolateString = function(a, b) {
   };
 };
 
-eo.interpolateRgb = function(a, b) {
-  a = eo_rgb(a);
-  b = eo_rgb(b);
+d3.interpolateRgb = function(a, b) {
+  a = d3_rgb(a);
+  b = d3_rgb(b);
   var ar = a.r,
       ag = a.g,
       ab = a.b,
@@ -80,14 +80,14 @@ eo.interpolateRgb = function(a, b) {
   };
 };
 
-eo.interpolateArray = function(a, b) {
+d3.interpolateArray = function(a, b) {
   var x = [],
       c = [],
       na = a.length,
       nb = b.length,
       n0 = Math.min(a.length, b.length),
       i;
-  for (i = 0; i < n0; ++i) x.push(eo.interpolate(a[i], b[i]));
+  for (i = 0; i < n0; ++i) x.push(d3.interpolate(a[i], b[i]));
   for (; i < na; ++i) c[i] = a[i];
   for (; i < nb; ++i) c[i] = b[i];
   return function(t) {
@@ -96,13 +96,13 @@ eo.interpolateArray = function(a, b) {
   };
 };
 
-eo.interpolateObject = function(a, b) {
+d3.interpolateObject = function(a, b) {
   var i = {},
       c = {},
       k;
   for (k in a) {
     if (k in b) {
-      i[k] = eo_interpolateByName(k)(a[k], b[k]);
+      i[k] = d3_interpolateByName(k)(a[k], b[k]);
     } else {
       c[k] = a[k];
     }
@@ -118,12 +118,12 @@ eo.interpolateObject = function(a, b) {
   };
 }
 
-var eo_interpolate_number = /[-+]?(?:\d+\.\d+|\d+\.|\.\d+|\d+)(?:[eE][-]?\d+)?/g,
-    eo_interpolate_digits = /[-+]?\d*\.?\d*(?:[eE][-]?\d+)?(.*)/,
-    eo_interpolate_rgb = {background: 1, fill: 1, stroke: 1};
+var d3_interpolate_number = /[-+]?(?:\d+\.\d+|\d+\.|\.\d+|\d+)(?:[eE][-]?\d+)?/g,
+    d3_interpolate_digits = /[-+]?\d*\.?\d*(?:[eE][-]?\d+)?(.*)/,
+    d3_interpolate_rgb = {background: 1, fill: 1, stroke: 1};
 
-function eo_interpolateByName(n) {
-  return n in eo_interpolate_rgb || /\bcolor\b/.test(n)
-      ? eo.interpolateRgb
-      : eo.interpolate;
+function d3_interpolateByName(n) {
+  return n in d3_interpolate_rgb || /\bcolor\b/.test(n)
+      ? d3.interpolateRgb
+      : d3.interpolate;
 }

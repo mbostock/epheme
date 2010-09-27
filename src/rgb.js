@@ -1,4 +1,4 @@
-function eo_rgb(format) {
+function d3_rgb(format) {
   var r, // red channel; int in [0, 255]
       g, // green channel; int in [0, 255]
       b, // blue channel; int in [0, 255]
@@ -12,26 +12,26 @@ function eo_rgb(format) {
     m2 = m1[2].split(",");
     switch (m1[1]) {
       case "hsl": {
-        return eo_rgb_hsl(
+        return d3_rgb_hsl(
           parseFloat(m2[0]), // degrees
           parseFloat(m2[1]) / 100, // percentage
           parseFloat(m2[2]) / 100); // percentage
       }
       case "rgb": {
         return {
-          r: eo_rgb_parse(m2[0]),
-          g: eo_rgb_parse(m2[1]),
-          b: eo_rgb_parse(m2[2])
+          r: d3_rgb_parse(m2[0]),
+          g: d3_rgb_parse(m2[1]),
+          b: d3_rgb_parse(m2[2])
         };
       }
     }
   }
 
   /* Named colors. */
-  if (name = eo_rgb_names[format]) return name;
+  if (name = d3_rgb_names[format]) return name;
 
   /* Null or undefined. */
-  if (format == null) return eo_rgb_names.black;
+  if (format == null) return d3_rgb_names.black;
 
   /* Hexadecimal colors: #rgb and #rrggbb. */
   if (format.charAt(0) == "#") {
@@ -52,7 +52,7 @@ function eo_rgb(format) {
   return {r: r, g: g, b: b};
 };
 
-function eo_rgb_hsl(h, s, l) {
+function d3_rgb_hsl(h, s, l) {
   var m1,
       m2;
 
@@ -81,12 +81,12 @@ function eo_rgb_hsl(h, s, l) {
   return {r: vv(h + 120), g: vv(h), b: vv(h - 120)};
 }
 
-function eo_rgb_parse(c) { // either integer or percentage
+function d3_rgb_parse(c) { // either integer or percentage
   var f = parseFloat(c);
   return c.charAt(c.length - 1) == "%" ? Math.round(f * 2.55) : f;
 }
 
-var eo_rgb_names = {
+var d3_rgb_names = {
   aliceblue: "#f0f8ff",
   antiquewhite: "#faebd7",
   aqua: "#00ffff",
@@ -236,4 +236,4 @@ var eo_rgb_names = {
   yellowgreen: "#9acd32"
 };
 
-for (var x in eo_rgb_names) eo_rgb_names[x] = eo_rgb(eo_rgb_names[x]);
+for (var x in d3_rgb_names) d3_rgb_names[x] = d3_rgb(d3_rgb_names[x]);

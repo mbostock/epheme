@@ -1,3 +1,3 @@
 (function(_) {
-  var eo = (_.org || (_.org = {})).epheme = {};
-  eo.version = "0.0.0"; // semver
+  var d3 = _.d3 = {};
+  d3.version = "0.0.0"; // semver

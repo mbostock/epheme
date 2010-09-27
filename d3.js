@@ -7,8 +7,8 @@ if (!Object.create) Object.create = function(o) {
   return new f();
 };
 (function(_) {
-  var eo = (_.org || (_.org = {})).epheme = {};
-  eo.version = "0.0.0"; // semver
+  var d3 = _.d3 = {};
+  d3.version = "0.0.0"; // semver
 var ns = {
 
   prefix: {
@@ -32,7 +32,7 @@ var ns = {
   }
 
 };
-eo.dispatch = function(that) {
+d3.dispatch = function(that) {
   var types = {};
 
   that.on = function(type, handler) {
@@ -127,7 +127,7 @@ var mode = {
   "out-int": function(f) { return reflect(reverse(f)); }
 };
 
-eo.ease = function(name) {
+d3.ease = function(name) {
   var i = name.indexOf("-"),
       t = i >= 0 ? name.substring(0, i) : name,
       m = i >= 0 ? name.substring(i + 1) : "in";
@@ -191,19 +191,19 @@ function bounce(t) {
       : t < 2.5 / 2.75 ? 7.5625 * (t -= 2.25 / 2.75) * t + .9375
       : 7.5625 * (t -= 2.625 / 2.75) * t + .984375;
 }
-eo.interpolate = function(a, b) {
-  if (typeof b == "number") return eo.interpolateNumber(+a, b);
-  if (typeof b == "string") return eo.interpolateString(String(a), b);
-  if (b instanceof Array) return eo.interpolateArray(a, b);
-  return eo.interpolateObject(a, b);
+d3.interpolate = function(a, b) {
+  if (typeof b == "number") return d3.interpolateNumber(+a, b);
+  if (typeof b == "string") return d3.interpolateString(String(a), b);
+  if (b instanceof Array) return d3.interpolateArray(a, b);
+  return d3.interpolateObject(a, b);
 };
 
-eo.interpolateNumber = function(a, b) {
+d3.interpolateNumber = function(a, b) {
   b -= a;
   return function(t) { return a + b * t; };
 };
 
-eo.interpolateString = function(a, b) {
+d3.interpolateString = function(a, b) {
   var m, // current match
       i, // current index
       j, // current index (for coallescing)
@@ -215,16 +215,16 @@ eo.interpolateString = function(a, b) {
       o;
 
   // Find all numbers in b.
-  for (i = 0; m = eo_interpolate_number.exec(b); ++i) {
+  for (i = 0; m = d3_interpolate_number.exec(b); ++i) {
     if (m.index) s.push(b.substring(s0, s1 = m.index));
     q.push({i: s.length, x: m[0]});
     s.push(null);
-    s0 = eo_interpolate_number.lastIndex;
+    s0 = d3_interpolate_number.lastIndex;
   }
   if (s0 < b.length) s.push(b.substring(s0));
 
   // Find all numbers in a.
-  for (i = 0, n = q.length; (m = eo_interpolate_number.exec(a)) && i < n; ++i) {
+  for (i = 0, n = q.length; (m = d3_interpolate_number.exec(a)) && i < n; ++i) {
     o = q[i];
     if (o.x == m[0]) { // The numbers match, so coallesce.
       if (s[o.i + 1] == null) { // This match is followed by another number.
@@ -240,7 +240,7 @@ eo.interpolateString = function(a, b) {
       n--;
       i--;
     } else {
-      o.x = eo.interpolateNumber(parseFloat(m[0]), parseFloat(o.x));
+      o.x = d3.interpolateNumber(parseFloat(m[0]), parseFloat(o.x));
     }
   }
 
@@ -256,9 +256,9 @@ eo.interpolateString = function(a, b) {
   };
 };
 
-eo.interpolateRgb = function(a, b) {
-  a = eo_rgb(a);
-  b = eo_rgb(b);
+d3.interpolateRgb = function(a, b) {
+  a = d3_rgb(a);
+  b = d3_rgb(b);
   var ar = a.r,
       ag = a.g,
       ab = a.b,
@@ -273,14 +273,14 @@ eo.interpolateRgb = function(a, b) {
   };
 };
 
-eo.interpolateArray = function(a, b) {
+d3.interpolateArray = function(a, b) {
   var x = [],
       c = [],
       na = a.length,
       nb = b.length,
       n0 = Math.min(a.length, b.length),
       i;
-  for (i = 0; i < n0; ++i) x.push(eo.interpolate(a[i], b[i]));
+  for (i = 0; i < n0; ++i) x.push(d3.interpolate(a[i], b[i]));
   for (; i < na; ++i) c[i] = a[i];
   for (; i < nb; ++i) c[i] = b[i];
   return function(t) {
@@ -289,13 +289,13 @@ eo.interpolateArray = function(a, b) {
   };
 };
 
-eo.interpolateObject = function(a, b) {
+d3.interpolateObject = function(a, b) {
   var i = {},
       c = {},
       k;
   for (k in a) {
     if (k in b) {
-      i[k] = eo_interpolateByName(k)(a[k], b[k]);
+      i[k] = d3_interpolateByName(k)(a[k], b[k]);
     } else {
       c[k] = a[k];
     }
@@ -311,33 +311,33 @@ eo.interpolateObject = function(a, b) {
   };
 }
 
-var eo_interpolate_number = /[-+]?(?:\d+\.\d+|\d+\.|\.\d+|\d+)(?:[eE][-]?\d+)?/g,
-    eo_interpolate_digits = /[-+]?\d*\.?\d*(?:[eE][-]?\d+)?(.*)/,
-    eo_interpolate_rgb = {background: 1, fill: 1, stroke: 1};
+var d3_interpolate_number = /[-+]?(?:\d+\.\d+|\d+\.|\.\d+|\d+)(?:[eE][-]?\d+)?/g,
+    d3_interpolate_digits = /[-+]?\d*\.?\d*(?:[eE][-]?\d+)?(.*)/,
+    d3_interpolate_rgb = {background: 1, fill: 1, stroke: 1};
 
-function eo_interpolateByName(n) {
-  return n in eo_interpolate_rgb || /\bcolor\b/.test(n)
-      ? eo.interpolateRgb
-      : eo.interpolate;
+function d3_interpolateByName(n) {
+  return n in d3_interpolate_rgb || /\bcolor\b/.test(n)
+      ? d3.interpolateRgb
+      : d3.interpolate;
 }
-eo.tween = eo_tweenInterpolate(eo.interpolate);
-eo.tweenRgb = eo_tweenInterpolate(eo.interpolateRgb);
+d3.tween = d3_tweenInterpolate(d3.interpolate);
+d3.tweenRgb = d3_tweenInterpolate(d3.interpolateRgb);
 
-function eo_tweenInterpolate(I) {
+function d3_tweenInterpolate(I) {
   return function(a, b) {
     var i = I(a, b);
     return function() {
-      return i(eo.time);
+      return i(d3.time);
     };
   };
 }
 
-function eo_tweenByName(n) {
-  return n in eo_interpolate_rgb || /\bcolor\b/.test(n)
-      ? eo.tweenRgb
-      : eo.tween;
+function d3_tweenByName(n) {
+  return n in d3_interpolate_rgb || /\bcolor\b/.test(n)
+      ? d3.tweenRgb
+      : d3.tween;
 }
-function eo_rgb(format) {
+function d3_rgb(format) {
   var r, // red channel; int in [0, 255]
       g, // green channel; int in [0, 255]
       b, // blue channel; int in [0, 255]
@@ -351,26 +351,26 @@ function eo_rgb(format) {
     m2 = m1[2].split(",");
     switch (m1[1]) {
       case "hsl": {
-        return eo_rgb_hsl(
+        return d3_rgb_hsl(
           parseFloat(m2[0]), // degrees
           parseFloat(m2[1]) / 100, // percentage
           parseFloat(m2[2]) / 100); // percentage
       }
       case "rgb": {
         return {
-          r: eo_rgb_parse(m2[0]),
-          g: eo_rgb_parse(m2[1]),
-          b: eo_rgb_parse(m2[2])
+          r: d3_rgb_parse(m2[0]),
+          g: d3_rgb_parse(m2[1]),
+          b: d3_rgb_parse(m2[2])
         };
       }
     }
   }
 
   /* Named colors. */
-  if (name = eo_rgb_names[format]) return name;
+  if (name = d3_rgb_names[format]) return name;
 
   /* Null or undefined. */
-  if (format == null) return eo_rgb_names.black;
+  if (format == null) return d3_rgb_names.black;
 
   /* Hexadecimal colors: #rgb and #rrggbb. */
   if (format.charAt(0) == "#") {
@@ -391,7 +391,7 @@ function eo_rgb(format) {
   return {r: r, g: g, b: b};
 };
 
-function eo_rgb_hsl(h, s, l) {
+function d3_rgb_hsl(h, s, l) {
   var m1,
       m2;
 
@@ -420,12 +420,12 @@ function eo_rgb_hsl(h, s, l) {
   return {r: vv(h + 120), g: vv(h), b: vv(h - 120)};
 }
 
-function eo_rgb_parse(c) { // either integer or percentage
+function d3_rgb_parse(c) { // either integer or percentage
   var f = parseFloat(c);
   return c.charAt(c.length - 1) == "%" ? Math.round(f * 2.55) : f;
 }
 
-var eo_rgb_names = {
+var d3_rgb_names = {
   aliceblue: "#f0f8ff",
   antiquewhite: "#faebd7",
   aqua: "#00ffff",
@@ -575,10 +575,10 @@ var eo_rgb_names = {
   yellowgreen: "#9acd32"
 };
 
-for (var x in eo_rgb_names) eo_rgb_names[x] = eo_rgb(eo_rgb_names[x]);
-var eo_transform_stack = [];
+for (var x in d3_rgb_names) d3_rgb_names[x] = d3_rgb(d3_rgb_names[x]);
+var d3_transform_stack = [];
 
-function eo_transform() {
+function d3_transform() {
   var transform = {},
       actions = [];
 
@@ -622,7 +622,7 @@ function eo_transform() {
 
     scope.data = function(v) {
       var subscope, action = {
-        impl: eo_transform_data,
+        impl: d3_transform_data,
         value: v,
         actions: [],
         enterActions: [],
@@ -641,17 +641,17 @@ function eo_transform() {
 
     scope.tweenData = function(v, t) {
       actions.push({
-        impl: eo_transform_data_tween,
-        bind: eo_transform_data_tween_bind,
+        impl: d3_transform_data_tween,
+        bind: d3_transform_data_tween_bind,
         value: v,
-        tween: arguments.length < 2 ? eo.tween : t
+        tween: arguments.length < 2 ? d3.tween : t
       });
       return scope;
     };
 
     scope.attr = function(n, v) {
       actions.push({
-        impl: eo_transform_attr,
+        impl: d3_transform_attr,
         name: ns.qualify(n),
         value: v
       });
@@ -660,19 +660,19 @@ function eo_transform() {
 
     scope.tweenAttr = function(n, v, t) {
       actions.push({
-        impl: eo_transform_attr_tween,
-        bind: eo_transform_attr_tween_bind,
+        impl: d3_transform_attr_tween,
+        bind: d3_transform_attr_tween_bind,
         name: ns.qualify(n),
         key: "attr." + n,
         value: v,
-        tween: arguments.length < 3 ? eo_tweenByName(n) : t
+        tween: arguments.length < 3 ? d3_tweenByName(n) : t
       });
       return scope;
     };
 
     scope.style = function(n, v, p) {
       actions.push({
-        impl: eo_transform_style,
+        impl: d3_transform_style,
         name: n,
         value: v,
         priority: arguments.length < 3 ? null : p
@@ -682,20 +682,20 @@ function eo_transform() {
 
     scope.tweenStyle = function(n, v, p, t) {
       actions.push({
-        impl: eo_transform_style_tween,
-        bind: eo_transform_style_tween_bind,
+        impl: d3_transform_style_tween,
+        bind: d3_transform_style_tween_bind,
         name: n,
         key: "style." + n,
         value: v,
         priority: arguments.length < 3 ? null : p,
-        tween: arguments.length < 4 ? eo_tweenByName(n) : t
+        tween: arguments.length < 4 ? d3_tweenByName(n) : t
       });
       return scope;
     };
 
     scope.add = function(n, v) {
       var action = {
-        impl: eo_transform_add,
+        impl: d3_transform_add,
         name: ns.qualify(n),
         value: v,
         actions: []
@@ -706,7 +706,7 @@ function eo_transform() {
 
     scope.remove = function(s) {
       actions.push({
-        impl: eo_transform_remove,
+        impl: d3_transform_remove,
         selector: s
       });
       return scope;
@@ -714,7 +714,7 @@ function eo_transform() {
 
     scope.text = function(v) {
       actions.push({
-        impl: eo_transform_text,
+        impl: d3_transform_text,
         value: v
       });
       return scope;
@@ -722,7 +722,7 @@ function eo_transform() {
 
     scope.on = function(t) {
       var action = {
-        impl: eo_transform_on,
+        impl: d3_transform_on,
         type: t,
         actions: []
       };
@@ -732,7 +732,7 @@ function eo_transform() {
 
     scope.filter = function(f) {
       var action = {
-        impl: eo_transform_filter,
+        impl: d3_transform_filter,
         filter: f,
         actions: []
       };
@@ -742,7 +742,7 @@ function eo_transform() {
 
     scope.select = function(s) {
       var action = {
-        impl: eo_transform_select,
+        impl: d3_transform_select,
         selector: s,
         actions: []
       };
@@ -752,7 +752,7 @@ function eo_transform() {
 
     scope.selectAll = function(s) {
       var action = {
-        impl: eo_transform_select_all,
+        impl: d3_transform_select_all,
         selector: s,
         actions: []
       };
@@ -762,10 +762,10 @@ function eo_transform() {
 
     scope.transition = function() {
       var subscope, action = {
-        impl: eo_transform_transition,
+        impl: d3_transform_transition,
         actions: [],
         endActions: [],
-        ease: eo.ease("cubic-in-out"),
+        ease: d3.ease("cubic-in-out"),
         delay: 0,
         duration: 250
       };
@@ -773,7 +773,7 @@ function eo_transform() {
       subscope = transform_scope(scope, action.actions);
       subscope.end = transform_scope(scope, action.endActions);
       subscope.ease = function(x) {
-        action.ease = typeof x == "string" ? eo.ease(x) : x;
+        action.ease = typeof x == "string" ? d3.ease(x) : x;
         return subscope;
       };
       subscope.delay = function(x) {
@@ -792,7 +792,7 @@ function eo_transform() {
 
   transform.select = function(s) {
     var action = {
-      impl: eo_transform_select,
+      impl: d3_transform_select,
       selector: s,
       actions: []
     };
@@ -802,7 +802,7 @@ function eo_transform() {
 
   transform.selectAll = function(s) {
     var action = {
-      impl: eo_transform_select_all,
+      impl: d3_transform_select_all,
       selector: s,
       actions: []
     };
@@ -811,21 +811,21 @@ function eo_transform() {
   };
 
   transform.apply = function() {
-    eo_transform_stack.unshift(null);
-    eo_transform_impl(actions, [{node: document, index: 0}]);
-    eo_transform_stack.shift();
+    d3_transform_stack.unshift(null);
+    d3_transform_impl(actions, [{node: document, index: 0}]);
+    d3_transform_stack.shift();
     return transform;
   };
 
   return transform;
 }
 
-function eo_transform_impl(actions, nodes) {
+function d3_transform_impl(actions, nodes) {
   var n = actions.length,
       i; // current index
-  for (i = 0; i < n; ++i) actions[i].impl(nodes, eo_transform_impl);
+  for (i = 0; i < n; ++i) actions[i].impl(nodes, d3_transform_impl);
 }
-function eo_transform_add(nodes, pass) {
+function d3_transform_add(nodes, pass) {
   var m = nodes.length,
       n = this.name,
       childNodes = [],
@@ -845,7 +845,7 @@ function eo_transform_add(nodes, pass) {
   }
   pass(this.actions, childNodes);
 }
-function eo_transform_attr(nodes) {
+function d3_transform_attr(nodes) {
   var m = nodes.length,
       n = this.name,
       v = this.value,
@@ -859,8 +859,8 @@ function eo_transform_attr(nodes) {
       }
     } else if (typeof v == "function") {
       for (i = 0; i < m; ++i) {
-        eo_transform_stack[0] = (o = nodes[i]).data;
-        x = v.apply(o, eo_transform_stack);
+        d3_transform_stack[0] = (o = nodes[i]).data;
+        x = v.apply(o, d3_transform_stack);
         x == null
             ? o.node.removeAttributeNS(n.space, n.local)
             : o.node.setAttributeNS(n.space, n.local, x);
@@ -876,8 +876,8 @@ function eo_transform_attr(nodes) {
     }
   } else if (typeof v == "function") {
     for (i = 0; i < m; ++i) {
-      eo_transform_stack[0] = (o = nodes[i]).data;
-      x = v.apply(o, eo_transform_stack);
+      d3_transform_stack[0] = (o = nodes[i]).data;
+      x = v.apply(o, d3_transform_stack);
       x == null
           ? o.node.removeAttribute(n)
           : o.node.setAttribute(n, x);
@@ -889,7 +889,7 @@ function eo_transform_attr(nodes) {
   }
 }
 
-function eo_transform_attr_tween(nodes) {
+function d3_transform_attr_tween(nodes) {
   var m = nodes.length,
       n = this.name,
       k = this.key,
@@ -906,7 +906,7 @@ function eo_transform_attr_tween(nodes) {
   }
 }
 
-function eo_transform_attr_tween_bind(nodes) {
+function d3_transform_attr_tween_bind(nodes) {
   var m = nodes.length,
       n = this.name,
       k = this.key,
@@ -917,8 +917,8 @@ function eo_transform_attr_tween_bind(nodes) {
   if (n.local) {
     if (typeof v === "function") {
       for (i = 0; i < m; ++i) {
-        eo_transform_stack[0] = (o = nodes[i]).data;
-        o.tween[k] = T(o.node.getAttributeNS(n.local, n.space), v.apply(o, eo_transform_stack));
+        d3_transform_stack[0] = (o = nodes[i]).data;
+        o.tween[k] = T(o.node.getAttributeNS(n.local, n.space), v.apply(o, d3_transform_stack));
       }
     } else {
       for (i = 0; i < m; ++i) {
@@ -927,8 +927,8 @@ function eo_transform_attr_tween_bind(nodes) {
     }
   } else if (typeof v === "function") {
     for (i = 0; i < m; ++i) {
-      eo_transform_stack[0] = (o = nodes[i]).data;
-      o.tween[k] = T(o.node.getAttribute(n), v.apply(o, eo_transform_stack));
+      d3_transform_stack[0] = (o = nodes[i]).data;
+      o.tween[k] = T(o.node.getAttribute(n), v.apply(o, d3_transform_stack));
     }
   } else {
     for (i = 0; i < m; ++i) {
@@ -936,7 +936,7 @@ function eo_transform_attr_tween_bind(nodes) {
     }
   }
 }
-function eo_transform_data(nodes, pass) {
+function d3_transform_data(nodes, pass) {
   var data = this.value,
       m = nodes.length,
       n, // data length
@@ -956,9 +956,9 @@ function eo_transform_data(nodes, pass) {
       indexesByKey; // map key -> index
 
   if (typeof data == "function") {
-    d = eo_transform_stack.shift();
-    data = data.apply(null, eo_transform_stack);
-    eo_transform_stack.unshift(d);
+    d = d3_transform_stack.shift();
+    data = data.apply(null, d3_transform_stack);
+    d3_transform_stack.unshift(d);
   }
 
   n = data.length;
@@ -991,8 +991,8 @@ function eo_transform_data(nodes, pass) {
 
     // compute map from key -> data
     for (i = 0; i < n; ++i) {
-      eo_transform_stack[0] = d = data[i];
-      k = kv.apply(null, eo_transform_stack);
+      d3_transform_stack[0] = d = data[i];
+      k = kv.apply(null, d3_transform_stack);
       if (k != null) {
         dataByKey[k] = d;
         indexesByKey[k] = i;
@@ -1060,7 +1060,7 @@ function eo_transform_data(nodes, pass) {
   pass(this.exitActions, exitNodes);
 }
 
-function eo_transform_data_tween(nodes) {
+function d3_transform_data_tween(nodes) {
   var m = nodes.length,
       i, // current index
       o; // current node
@@ -1069,7 +1069,7 @@ function eo_transform_data_tween(nodes) {
   }
 }
 
-function eo_transform_data_tween_bind(nodes) {
+function d3_transform_data_tween_bind(nodes) {
   var m = nodes.length,
       v = this.value,
       T = this.tween,
@@ -1077,7 +1077,7 @@ function eo_transform_data_tween_bind(nodes) {
       o; // current node
   if (typeof v === "function") {
     for (i = 0; i < m; ++i) {
-      (o = nodes[i]).tween.data = T(eo_transform_stack[0] = o.data, v.apply(o, eo_transform_stack));
+      (o = nodes[i]).tween.data = T(d3_transform_stack[0] = o.data, v.apply(o, d3_transform_stack));
     }
   } else {
     for (i = 0; i < m; ++i) {
@@ -1085,7 +1085,7 @@ function eo_transform_data_tween_bind(nodes) {
     }
   }
 }
-function eo_transform_remove(nodes) {
+function d3_transform_remove(nodes) {
   var m = nodes.length,
       s = this.selector,
       r, // the selected nodes (for selectors)
@@ -1108,14 +1108,14 @@ function eo_transform_remove(nodes) {
     }
   }
 }
-function eo_transform_on(nodes) {
+function d3_transform_on(nodes) {
   var actions = this.actions,
       n = actions.length,
       m = nodes.length,
       t = "on" + this.type,
       i = 0, // current index
       o, // curent node
-      stack = eo_transform_stack.slice(); // stack snapshot
+      stack = d3_transform_stack.slice(); // stack snapshot
 
   if (n) {
     for (; i < m; ++i) {
@@ -1130,35 +1130,35 @@ function eo_transform_on(nodes) {
 
   function bind(o) {
     return function(e) {
-      var s = eo_transform_stack;
+      var s = d3_transform_stack;
       try {
-        eo_transform_stack = stack;
-        eo.event = e;
-        for (i = 0; i < n; ++i) actions[i].impl(o, eo_transform_impl);
+        d3_transform_stack = stack;
+        d3.event = e;
+        for (i = 0; i < n; ++i) actions[i].impl(o, d3_transform_impl);
       } finally {
-        delete eo.event;
-        eo_transform_stack = s;
+        delete d3.event;
+        d3_transform_stack = s;
       }
     };
   }
 }
-function eo_transform_filter(nodes, pass) {
+function d3_transform_filter(nodes, pass) {
   var filteredNodes = [],
       m = nodes.length,
       f = this.filter,
       i, // the node index
       o; // current item
   for (i = 0; i < m; ++i) {
-    eo_transform_stack[0] = (o = nodes[i]).data;
-    if (f.apply(o, eo_transform_stack)) filteredNodes.push(o);
+    d3_transform_stack[0] = (o = nodes[i]).data;
+    if (f.apply(o, d3_transform_stack)) filteredNodes.push(o);
   }
   pass(this.actions, filteredNodes);
 }
-eo.select = function(s) {
-  return eo_transform().select(s);
+d3.select = function(s) {
+  return d3_transform().select(s);
 };
 
-function eo_transform_select(nodes, pass) {
+function d3_transform_select(nodes, pass) {
   var selectedNodes = [],
       m = nodes.length,
       s = this.selector,
@@ -1177,25 +1177,25 @@ function eo_transform_select(nodes, pass) {
   }
   pass(this.actions, selectedNodes);
 }
-eo.selectAll = function(s) {
-  return eo_transform().selectAll(s);
+d3.selectAll = function(s) {
+  return d3_transform().selectAll(s);
 };
 
-function eo_transform_select_all(nodes, pass) {
+function d3_transform_select_all(nodes, pass) {
   var m = nodes.length,
       s = this.selector,
       i, // the node index
       o, // the current node
       p; // the current node
-  eo_transform_stack.unshift(null);
+  d3_transform_stack.unshift(null);
   for (i = 0; i < m; ++i) {
-    eo_transform_stack[1] = (o = nodes[i]).data;
-    pass(this.actions, eo_transform_nodes((p = o.node).querySelectorAll(s), p));
+    d3_transform_stack[1] = (o = nodes[i]).data;
+    pass(this.actions, d3_transform_nodes((p = o.node).querySelectorAll(s), p));
   }
-  eo_transform_stack.shift();
+  d3_transform_stack.shift();
 }
 
-function eo_transform_nodes(x, p) {
+function d3_transform_nodes(x, p) {
   var nodes = [],
       i = 0,
       n = x.length;
@@ -1203,7 +1203,7 @@ function eo_transform_nodes(x, p) {
   for (; i < n; i++) nodes.push({node: x[i], index: i});
   return nodes;
 }
-function eo_transform_style(nodes) {
+function d3_transform_style(nodes) {
   var m = nodes.length,
       n = this.name,
       v = this.value,
@@ -1218,8 +1218,8 @@ function eo_transform_style(nodes) {
   } else if (typeof v == "function") {
     for (i = 0; i < m; ++i) {
       o = nodes[i];
-      eo_transform_stack[0] = o.data;
-      x = v.apply(o, eo_transform_stack);
+      d3_transform_stack[0] = o.data;
+      x = v.apply(o, d3_transform_stack);
       x == null
           ? o.node.style.removeProperty(n)
           : o.node.style.setProperty(n, x, p);
@@ -1231,7 +1231,7 @@ function eo_transform_style(nodes) {
   }
 }
 
-function eo_transform_style_tween(nodes) {
+function d3_transform_style_tween(nodes) {
   var m = nodes.length,
       n = this.name,
       k = this.key,
@@ -1243,7 +1243,7 @@ function eo_transform_style_tween(nodes) {
   }
 }
 
-function eo_transform_style_tween_bind(nodes) {
+function d3_transform_style_tween_bind(nodes) {
   var m = nodes.length,
       n = this.name,
       k = this.key,
@@ -1253,8 +1253,8 @@ function eo_transform_style_tween_bind(nodes) {
       o; // current node
   if (typeof v === "function") {
     for (i = 0; i < m; ++i) {
-      eo_transform_stack[0] = (o = nodes[i]).data;
-      o.tween[k] = T(o.node.style.getPropertyValue(n), v.apply(o, eo_transform_stack));
+      d3_transform_stack[0] = (o = nodes[i]).data;
+      o.tween[k] = T(o.node.style.getPropertyValue(n), v.apply(o, d3_transform_stack));
     }
   } else {
     for (i = 0; i < m; ++i) {
@@ -1262,7 +1262,7 @@ function eo_transform_style_tween_bind(nodes) {
     }
   }
 }
-function eo_transform_text(nodes) {
+function d3_transform_text(nodes) {
   var m = nodes.length,
       v = this.value,
       i, // current node index
@@ -1271,8 +1271,8 @@ function eo_transform_text(nodes) {
   if (typeof v == "function") {
     for (i = 0; i < m; ++i) {
       o = nodes[i];
-      eo_transform_stack[0] = o.data;
-      x = v.apply(o, eo_transform_stack);
+      d3_transform_stack[0] = o.data;
+      x = v.apply(o, d3_transform_stack);
       o = o.node;
       while (o.lastChild) o.removeChild(o.lastChild);
       o.appendChild(document.createTextNode(x));
@@ -1285,7 +1285,7 @@ function eo_transform_text(nodes) {
     }
   }
 }
-function eo_transform_transition(nodes) {
+function d3_transform_transition(nodes) {
   var actions = this.actions,
       endActions = this.endActions,
       start = Date.now(),
@@ -1302,13 +1302,13 @@ function eo_transform_transition(nodes) {
       j, // current index
       o, // curent node
       x, // current value
-      stack = eo_transform_stack.slice(); // stack snapshot
+      stack = d3_transform_stack.slice(); // stack snapshot
 
   // If delay is a function, transition each node separately.
   if (typeof delay == "function") {
     for (i = 0; i < m; ++i) {
-      eo_transform_stack[0] = (o = nodes[i]).data;
-      x = o.delay = delay.apply(o, eo_transform_stack);
+      d3_transform_stack[0] = (o = nodes[i]).data;
+      x = o.delay = delay.apply(o, d3_transform_stack);
       if (x < minDelay) minDelay = x;
       if (x > maxDelay) maxDelay = x;
     }
@@ -1323,74 +1323,74 @@ function eo_transform_transition(nodes) {
 
   // Bind the active transition to the node.
   function bind(interval) {
-    var s = eo_transform_stack;
+    var s = d3_transform_stack;
     for (i = 0; i < m; ++i) {
       (o = nodes[i]).node.interval = interval;
     }
     try {
-      eo.time = 0;
-      eo_transform_stack = stack;
-      eo_transform_transition_bind(actions, nodes);
+      d3.time = 0;
+      d3_transform_stack = stack;
+      d3_transform_transition_bind(actions, nodes);
     } finally {
-      delete eo.time;
-      eo_transform_stack = s;
+      delete d3.time;
+      d3_transform_stack = s;
     }
   }
 
   function tickOne() {
-    var s = eo_transform_stack,
+    var s = d3_transform_stack,
         a = nodes.filter(function(o) { return o.node.interval == interval; }),
         m = a.length,
         q = Date.now(),
         t,
         d = true;
     try {
-      eo_transform_stack = stack;
+      d3_transform_stack = stack;
       for (i = 0; i < m; ++i) {
         o = a[i];
         t = (q - start - o.delay) / duration;
         if (t < 0) continue;
         if (t > 1) t = 1;
         else d = false;
-        eo.time = ease(t);
-        for (j = 0; j < n; ++j) actions[j].impl([o], eo_transform_impl);
+        d3.time = ease(t);
+        for (j = 0; j < n; ++j) actions[j].impl([o], d3_transform_impl);
         if (t == 1) {
-          for (j = 0; j < k; ++j) endActions[j].impl([o], eo_transform_impl);
+          for (j = 0; j < k; ++j) endActions[j].impl([o], d3_transform_impl);
           o.delay = Infinity; // stop transitioning this node
         }
       }
     } finally {
-      delete eo.time;
-      eo_transform_stack = s;
+      delete d3.time;
+      d3_transform_stack = s;
     }
     if (d) clearInterval(interval);
   }
 
   function tickAll() {
-    var s = eo_transform_stack,
+    var s = d3_transform_stack,
         t = (Date.now() - start - delay) / duration,
         a = nodes.filter(function(o) { return o.node.interval == interval; });
     try {
-      eo_transform_stack = stack;
-      eo.time = ease(t < 0 ? 0 : t > 1 ? 1 : t);
-      for (i = 0; i < n; ++i) actions[i].impl(a, eo_transform_impl);
+      d3_transform_stack = stack;
+      d3.time = ease(t < 0 ? 0 : t > 1 ? 1 : t);
+      for (i = 0; i < n; ++i) actions[i].impl(a, d3_transform_impl);
     } finally {
-      delete eo.time;
-      eo_transform_stack = s;
+      delete d3.time;
+      d3_transform_stack = s;
     }
     if (t >= 1) {
       clearInterval(interval);
       try {
-        eo_transform_stack = stack;
-        for (i = 0; i < k; ++i) endActions[i].impl(a, eo_transform_impl);
+        d3_transform_stack = stack;
+        for (i = 0; i < k; ++i) endActions[i].impl(a, d3_transform_impl);
       } finally {
-        eo_transform_stack = s;
+        d3_transform_stack = s;
       }
     }
   }
 }
 
-function eo_transform_transition_bind(actions, nodes) {
+function d3_transform_transition_bind(actions, nodes) {
   var n = actions.length,
       m = nodes.length,
       a, // current action
@@ -1401,7 +1401,7 @@ function eo_transform_transition_bind(actions, nodes) {
   for (i = 0; i < n; ++i) {
     a = actions[i];
     if (a.bind) a.bind(nodes);
-    a.impl(nodes, eo_transform_transition_bind);
+    a.impl(nodes, d3_transform_transition_bind);
   }
 }
 })(this);

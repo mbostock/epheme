@@ -1,8 +1,8 @@
-eo.select = function(s) {
-  return eo_transform().select(s);
+d3.select = function(s) {
+  return d3_transform().select(s);
 };
 
-function eo_transform_select(nodes, pass) {
+function d3_transform_select(nodes, pass) {
   var selectedNodes = [],
       m = nodes.length,
       s = this.selector,

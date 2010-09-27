@@ -1,4 +1,4 @@
-function eo_transform_data(nodes, pass) {
+function d3_transform_data(nodes, pass) {
   var data = this.value,
       m = nodes.length,
       n, // data length
@@ -18,9 +18,9 @@ function eo_transform_data(nodes, pass) {
       indexesByKey; // map key -> index
 
   if (typeof data == "function") {
-    d = eo_transform_stack.shift();
-    data = data.apply(null, eo_transform_stack);
-    eo_transform_stack.unshift(d);
+    d = d3_transform_stack.shift();
+    data = data.apply(null, d3_transform_stack);
+    d3_transform_stack.unshift(d);
   }
 
   n = data.length;
@@ -53,8 +53,8 @@ function eo_transform_data(nodes, pass) {
 
     // compute map from key -> data
     for (i = 0; i < n; ++i) {
-      eo_transform_stack[0] = d = data[i];
-      k = kv.apply(null, eo_transform_stack);
+      d3_transform_stack[0] = d = data[i];
+      k = kv.apply(null, d3_transform_stack);
       if (k != null) {
         dataByKey[k] = d;
         indexesByKey[k] = i;
@@ -122,7 +122,7 @@ function eo_transform_data(nodes, pass) {
   pass(this.exitActions, exitNodes);
 }
 
-function eo_transform_data_tween(nodes) {
+function d3_transform_data_tween(nodes) {
   var m = nodes.length,
       i, // current index
       o; // current node
@@ -131,7 +131,7 @@ function eo_transform_data_tween(nodes) {
   }
 }
 
-function eo_transform_data_tween_bind(nodes) {
+function d3_transform_data_tween_bind(nodes) {
   var m = nodes.length,
       v = this.value,
       T = this.tween,
@@ -139,7 +139,7 @@ function eo_transform_data_tween_bind(nodes) {
       o; // current node
   if (typeof v === "function") {
     for (i = 0; i < m; ++i) {
-      (o = nodes[i]).tween.data = T(eo_transform_stack[0] = o.data, v.apply(o, eo_transform_stack));
+      (o = nodes[i]).tween.data = T(d3_transform_stack[0] = o.data, v.apply(o, d3_transform_stack));
     }
   } else {
     for (i = 0; i < m; ++i) {
