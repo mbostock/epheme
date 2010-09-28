@@ -1,18 +1,16 @@
 <html>
   <head>
     <title>Hello, world!</title>
-    <script type="text/javascript" src="../../epheme.js"></script>
+    <script type="text/javascript" src="../../d3.js"></script>
   </head>
   <body>
     Your lucky numbers are:<br>
     <span></span>
     <script type="text/javascript">
 
-var eo = org.epheme;
-
 var data = [4, 8, 15, 16, 23, 42];
 
-eo.select("span")
+d3.select("span")
   .selectAll("svg")
     .data(data)
   .enter.add("svg:svg")

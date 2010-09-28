@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>Donut Chart</title>
-    <script type="text/javascript" src="../../epheme.js"></script>
+    <script type="text/javascript" src="../../d3.js"></script>
     <style type="text/css">
 
 body {
@@ -12,8 +12,6 @@ body {
   </head>
   <body>
     <script type="text/javascript">
-
-var eo = org.epheme;
 
 var w = 400,
     h = 400,
@@ -28,7 +26,7 @@ var colors = [
   "#c7c7c7", "#bcbd22", "#dbdb8d", "#17becf", "#9edae5"
 ];
 
-var vis = eo.select("body")
+var vis = d3.select("body")
   .add("svg:svg")
     .attr("width", w)
     .attr("height", h);
@@ -45,7 +43,7 @@ arcs.add("svg:path")
 
 vis.apply();
 
-var update = eo.selectAll("g.arc > path")
+var update = d3.selectAll("g.arc > path")
     .data(function() {
       var prev = data,
           next = data = normalize(range(n).map(Math.random)),

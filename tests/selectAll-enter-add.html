@@ -1,16 +1,13 @@
 <html>
   <head>
     <title>Test - selectAll > enter > add</title>
-    <script type="text/javascript" src="../epheme.js"></script>
+    <script type="text/javascript" src="../d3.js"></script>
   </head>
   <body>
     <span></span>
     <script type="text/javascript">
 
-var eo = org.epheme;
-
-eo.transform()
-  .select("body")
+d3.select("body")
   .selectAll("span")
     .data(["Test", "passed."])
     .text(function(d) { return d; })

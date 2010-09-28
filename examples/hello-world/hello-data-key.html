@@ -1,13 +1,11 @@
 <html>
   <head>
     <title>Hello, data!</title>
-    <script type="text/javascript" src="../../epheme.js"></script>
+    <script type="text/javascript" src="../../d3.js"></script>
   </head>
   <body>
     Your lucky numbers are:<br>
     <script type="text/javascript">
-
-var eo = org.epheme;
 
 var i = 0, data = [
   {id: i++, value: 4},
@@ -18,7 +16,7 @@ var i = 0, data = [
   {id: i++, value: 42}
 ];
 
-var t = eo.selectAll("span")
+var t = d3.selectAll("span")
     .data(data)
     .key("id", function(d) { return "span-" + d.id; });
 

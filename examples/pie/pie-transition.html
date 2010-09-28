@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>Pie Chart</title>
-    <script type="text/javascript" src="../../epheme.js"></script>
+    <script type="text/javascript" src="../../d3.js"></script>
     <style type="text/css">
 
 body {
@@ -12,8 +12,6 @@ body {
   </head>
   <body>
     <script type="text/javascript">
-
-var eo = org.epheme;
 
 var data = normalize(range(10).map(Math.random).sort(descending)),
     w = 400,
@@ -27,7 +25,7 @@ var colors = [
   "#c7c7c7", "#bcbd22", "#dbdb8d", "#17becf", "#9edae5"
 ];
 
-var vis = eo.select("body")
+var vis = d3.select("body")
   .add("svg:svg")
     .attr("width", w)
     .attr("height", h);
@@ -53,15 +51,15 @@ var tx = arcs.transition()
 
 tx.select("path")
     .attr("d", function(d) {
-      var a0 = eo.time * d.startAngle - Math.PI / 2,
-          a1 = eo.time * d.endAngle - Math.PI / 2;
+      var a0 = d3.time * d.startAngle - Math.PI / 2,
+          a1 = d3.time * d.endAngle - Math.PI / 2;
       return arc(0, r, a0, a1);
     });
 
 tx.select("text")
     .attr("display", null)
     .attr("transform", function(d) {
-      var a = eo.time * d.midAngle - Math.PI / 2,
+      var a = d3.time * d.midAngle - Math.PI / 2,
           t = "rotate(" + a * 180 / Math.PI + ")translate(" + r * .8 + ",0)";
       return upright(a) ? t : t + "rotate(180)";
     });
@@ -72,7 +70,7 @@ tx.end.select("path")
     .delay(function() { return this.index * 50; })
     .duration(750)
     .attr("d", function(d) {
-      var r0 = eo.time * r * .6,
+      var r0 = d3.time * r * .6,
           r1 = r,
           a0 = d.startAngle - Math.PI / 2,
           a1 = d.endAngle - Math.PI / 2;

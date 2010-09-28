@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>Hello, transition!</title>
-    <script type="text/javascript" src="../../epheme.js"></script>
+    <script type="text/javascript" src="../../d3.js"></script>
     <style type="text/css">
 
 body {
@@ -25,9 +25,7 @@ div {
     <div></div>
     <script type="text/javascript">
 
-var eo = org.epheme;
-
-var t = eo.select("div")
+var t = d3.select("div")
     .style("width", "0%")
     .style("background-color", "steelblue")
   .transition()
@@ -35,7 +33,7 @@ var t = eo.select("div")
     .duration(2000)
     .tweenStyle("width", "100%")
     .tweenStyle("background-color", "brown")
-    .text(function() { return ~~(eo.time * 100) + "\u00a0"; })
+    .text(function() { return ~~(d3.time * 100) + "\u00a0"; })
   .apply();
 
 window.addEventListener("keypress", t.apply, false);

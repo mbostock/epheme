@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>Hello, data!</title>
-    <script type="text/javascript" src="../../epheme.js"></script>
+    <script type="text/javascript" src="../../d3.js"></script>
     <style type="text/css">
 
 body, td {
@@ -41,8 +41,6 @@ td {
     </table>
     <script type="text/javascript">
 
-var eo = org.epheme;
-
 var data = [];
 
 for (var i = 0; i < 10; i++) {
@@ -52,7 +50,7 @@ for (var i = 0; i < 10; i++) {
   data.push(a);
 }
 
-var t = eo.selectAll("tr")
+var t = d3.selectAll("tr")
     .data(data)
   .selectAll("td")
     .data(function(d) { return d; })

@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>Streamgraph</title>
-    <script type="text/javascript" src="../../epheme.min.js"></script>
+    <script type="text/javascript" src="../../d3.min.js"></script>
     <script type="text/javascript" src="stream.js"></script>
     <script type="text/javascript" src="stack.js"></script>
     <style type="text/css">
@@ -16,13 +16,11 @@ body {
   <body>
     <script type="text/javascript">
 
-var eo = org.epheme;
-
 var n = 20, // number of layers
     m = 200, // number of samples per layer
     data0 = stack(stream_layers(n, m), null, "wiggle"),
     data1 = stack(stream_layers(n, m), null, "wiggle"),
-    color = eo.interpolateRgb("#aad", "#556");
+    color = d3.interpolateRgb("#aad", "#556");
 
 var w = 960,
     h = 500,
@@ -32,7 +30,7 @@ var w = 960,
     y0 = function(d) { return h - d.y0 * h / my; },
     y1 = function(d) { return h - (d.y + d.y0) * h / my; };
 
-var vis = eo.select("body")
+var vis = d3.select("body")
   .add("svg:svg")
     .attr("width", w)
     .attr("height", h);
@@ -46,7 +44,7 @@ vis.selectAll("path.area")
 
 vis.apply();
 
-window.addEventListener("keypress", eo.selectAll("path.area")
+window.addEventListener("keypress", d3.selectAll("path.area")
     .data(function() {
       var d = data1;
       data1 = data0;

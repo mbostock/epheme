@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>Hello, data!</title>
-    <script type="text/javascript" src="../../epheme.js"></script>
+    <script type="text/javascript" src="../../d3.js"></script>
   </head>
   <body>
     Your lucky numbers are:<br>
@@ -12,11 +12,9 @@
     <span></span>
     <script type="text/javascript">
 
-var eo = org.epheme;
-
 var data = [4, 8, 15, 16, 23, 42];
 
-eo.selectAll("span")
+d3.selectAll("span")
     .data(data)
   .add("svg:svg")
     .attr("width", 100)
@@ -36,7 +34,7 @@ eo.selectAll("span")
 
 function refresh() {
   for (var i = 0; i < data.length; i++) data[i] = (data[i] + 1) % 100;
-  eo.selectAll("text")
+  d3.selectAll("text")
       .data(data)
       .text(function(d) { return d; })
     .apply();

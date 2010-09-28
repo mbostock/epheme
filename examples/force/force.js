@@ -1,5 +1,5 @@
 function layout_force() {
-  var force = eo.dispatch({}),
+  var force = d3.dispatch({}),
       size = {x: 1, y: 1},
       alpha = .1,
       nodeDistance = 60,

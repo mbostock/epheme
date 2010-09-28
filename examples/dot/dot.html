@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>Dot Plot</title>
-    <script type="text/javascript" src="../../epheme.js"></script>
+    <script type="text/javascript" src="../../d3.js"></script>
     <style type="text/css">
 
 body {
@@ -30,8 +30,6 @@ rect {
   <body>
     <script type="text/javascript">
 
-var eo = org.epheme;
-
 var data = range(100).map(function(i) {
   return {x: i / 99, y: Math.random()};
 });
@@ -40,7 +38,7 @@ var w = 450,
     h = 450,
     p = 20;
 
-var vis = eo.select("body")
+var vis = d3.select("body")
   .add("svg:svg")
     .attr("width", w + p * 2)
     .attr("height", h + p * 2)

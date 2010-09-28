@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>Force-Directed Layout</title>
-    <script type="text/javascript" src="../../epheme.min.js"></script>
+    <script type="text/javascript" src="../../d3.min.js"></script>
     <script type="text/javascript" src="miserables.js"></script>
     <script type="text/javascript" src="force.js"></script>
     <style type="text/css">
@@ -26,8 +26,6 @@ line.link {
   <body>
     <script type="text/javascript">
 
-var eo = org.epheme;
-
 var w = 960,
     h = 500;
 
@@ -37,7 +35,7 @@ var force = layout_force()
     .size({x: w, y: h})
     .start();
 
-var vis = eo.select("body")
+var vis = d3.select("body")
   .add("svg:svg")
     .attr("width", w)
     .attr("height", h);
@@ -61,7 +59,7 @@ vis.selectAll("circle.node")
 
 vis.apply();
 
-var update = eo.select("svg");
+var update = d3.select("svg");
 
 update.selectAll("line.link")
     .data(miserables.links)

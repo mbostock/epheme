@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>Hello, world!</title>
-    <script type="text/javascript" src="../../epheme.js"></script>
+    <script type="text/javascript" src="../../d3.js"></script>
   </head>
   <body>
     Your lucky numbers are:<br>
@@ -12,9 +12,7 @@
     <span></span>
     <script type="text/javascript">
 
-var eo = org.epheme;
-
-eo.selectAll("span")
+d3.selectAll("span")
   .add("svg:svg")
     .attr("width", 100)
     .attr("height", 100)
@@ -31,7 +29,7 @@ eo.selectAll("span")
     .text(function() { return ~~(Math.random() * 100); })
   .apply();
 
-window.addEventListener("keypress", eo.selectAll("text")
+window.addEventListener("keypress", d3.selectAll("text")
     .text(function() { return ~~(Math.random() * 100); })
     .apply, false);
 

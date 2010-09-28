@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>Pie Chart</title>
-    <script type="text/javascript" src="../../epheme.js"></script>
+    <script type="text/javascript" src="../../d3.js"></script>
     <style type="text/css">
 
 body {
@@ -12,8 +12,6 @@ body {
   </head>
   <body>
     <script type="text/javascript">
-
-var eo = org.epheme;
 
 var data = normalize(range(10).map(Math.random).sort(descending)),
     w = 400,
@@ -27,7 +25,7 @@ var colors = [
   "#c7c7c7", "#bcbd22", "#dbdb8d", "#17becf", "#9edae5"
 ];
 
-var vis = eo.select("body")
+var vis = d3.select("body")
   .add("svg:svg")
     .attr("width", w)
     .attr("height", h);
