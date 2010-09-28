@@ -13,11 +13,9 @@ function d3_transform_select(nodes, pass) {
       e; // current selected node
   for (i = 0; i < m; ++i) {
     e = (p = (o = nodes[i]).node).querySelector(s);
-    if (e != null) {
-      selectedNodes.push(c = Object.create(o));
-      c.parentNode = p;
-      c.node = e;
-    }
+    selectedNodes.push(c = Object.create(o));
+    c.parentNode = p;
+    c.node = e;
   }
   pass(this.actions, selectedNodes);
 }
